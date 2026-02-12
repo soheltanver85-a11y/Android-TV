@@ -3,32 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Fullscreen Pro TV</title>
+    <title>Pro TV - Search & Fullscreen</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
 
-        #player-wrapper { height: 50vh; background: #000; transition: height 0.5s ease; position: relative; }
+        /* ভিডিও সেকশন */
+        #player-wrapper { height: 50vh; background: #000; transition: height 0.5s; position: relative; }
         .video-js { width: 100% !important; height: 100% !important; }
         
+        /* ফুলস্ক্রিন মোড স্টাইল */
+        body.is-fullscreen #player-wrapper { height: 100vh; }
+        body.is-fullscreen .tabs-container, body.is-fullscreen #main-content { display: none; }
+
+        /* ক্যাটাগরি ও সার্চ বার */
+        .tabs-container {
+            display: flex; align-items: center; gap: 10px; padding: 10px 40px; 
+            background: #111; overflow-x: auto; scrollbar-width: none;
+        }
+        .tab {
+            padding: 8px 20px; background: #222; border-radius: 20px;
+            cursor: pointer; white-space: nowrap; transition: 0.3s; border: 2px solid transparent; font-size: 14px;
+        }
+        .tab:focus, .tab.active { background: var(--accent); border-color: white; outline: none; }
+
+        .search-box {
+            margin-left: auto; display: flex; align-items: center; background: #222;
+            border-radius: 20px; padding: 5px 15px; border: 1px solid #444;
+        }
+        .search-box input {
+            background: transparent; border: none; color: white; outline: none; padding: 5px; font-size: 14px;
+        }
+
         /* কন্টেন্ট এরিয়া */
-        #main-ui { transition: opacity 0.5s; }
-        .tabs-container { display: flex; align-items: center; gap: 10px; padding: 10px 40px; background: #111; overflow-x: auto; }
-        .tab { padding: 8px 20px; background: #222; border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 14px; }
-        .tab.active { background: var(--accent); }
-
-        .search-box { margin-left: auto; background: #222; border-radius: 20px; padding: 5px 15px; }
-        .search-box input { background: transparent; border: none; color: white; outline: none; }
-
-        #main-content { height: 50vh; overflow-y: auto; padding: 20px 40px; }
+        #main-content { height: 50vh; overflow-y: auto; padding: 10px 40px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
 
         .card { background: var(--card); border-radius: 12px; position: relative; transition: 0.3s; cursor: pointer; border: 3px solid transparent; }
         .card:focus { transform: scale(1.1); border-color: var(--accent); outline: none; }
+
         .logo-box { height: 80px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 8px; overflow: hidden; }
-        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-        .name { padding: 5px; font-size: 12px; font-weight: bold; text-align: center; }
+        .logo-box img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.5s; }
+        .logo-box img.loaded { opacity: 1; }
+        
+        .name { padding: 5px; font-size: 12px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fav-star { position: absolute; top: 5px; right: 5px; color: #ffcc00; display: none; }
+        .is-favorite .fav-star { display: block; }
     </style>
 </head>
 <body>
@@ -37,78 +58,123 @@
     <video id="tv-player" class="video-js vjs-big-play-centered" controls preload="auto"></video>
 </div>
 
-<div id="main-ui">
-    <div class="tabs-container">
-        <div class="tab active" onclick="filterCategory('All')">সবগুলো</div>
-        <div class="tab" onclick="filterCategory('Favorite')">ফেভারেট</div>
-        <div class="tab" onclick="filterCategory('Sports')">Sports</div>
-        <div class="tab" onclick="filterCategory('Bangla')">বাংলা</div>
-        <div class="search-box">
-            <input type="text" id="search" placeholder="খুঁজুন..." oninput="searchChannel()">
-        </div>
+<div class="tabs-container">
+    <div class="tab active" tabindex="0" onclick="filterCategory('All')">সবগুলো</div>
+    <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">ফেভারেট</div>
+    <div class="tab" tabindex="0" onclick="filterCategory('Sports')">Sports</div>
+    <div class="tab" tabindex="0" onclick="filterCategory('Bangla')">বাংলা</div>
+    <div class="tab" tabindex="0" onclick="filterCategory('Hindi')">Hindi</div>
+    
+    <div class="search-box">
+        <i class="fas fa-search" style="font-size: 12px; margin-right: 5px; color: #888;"></i>
+        <input type="text" id="search" placeholder="খুঁজুন..." oninput="searchChannel()">
     </div>
+</div>
 
-    <div id="main-content">
-        <div id="channel-grid" class="grid"></div>
-    </div>
+<div id="main-content">
+    <div id="channel-grid" class="grid"></div>
 </div>
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    let autoFS-Timer;
+    
+    let allChannels = [];
+    let favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
+    let currentCategory = 'All';
 
-    // ১. ভিডিও প্লেয়ারে ডাবল ক্লিক করলে ফুলস্ক্রিন টগল হবে
-    player.on('dblclick', function() {
-        if (player.isFullscreen()) {
-            player.exitFullscreen();
-        } else {
-            player.requestFullscreen();
-        }
+    // অটো-রিকানেক্ট
+    player.on('error', () => {
+        setTimeout(() => { player.src(player.src()); player.play(); }, 3000);
     });
 
-    function playChannel(url) {
-        player.src({ src: url, type: 'application/x-mpegURL' });
-        player.play();
-
-        // ২. ১০ সেকেন্ড পর অটো ফুলস্ক্রিন
-        clearTimeout(autoFS-Timer);
-        autoFS-Timer = setTimeout(() => {
-            if (!player.isFullscreen()) {
-                player.requestFullscreen();
-            }
-        }, 10000); // ১০,০০০ মিলিসেকেন্ড = ১০ সেকেন্ড
-    }
-
-    // ফুলস্ক্রিন থেকে বের হলে টাইমার বন্ধ করা
-    player.on('fullscreenchange', function() {
-        if (!player.isFullscreen()) {
-            clearTimeout(autoFS-Timer);
-        }
-    });
-
-    // বাকি ফাংশনগুলো (init, parseM3U, renderGrid) আগের মতোই থাকবে...
     async function init() {
         const res = await fetch(m3uUrl);
         const data = await res.text();
-        const lines = data.split('\n');
-        let name = "", logo = "";
-        const grid = document.getElementById('channel-grid');
+        parseM3U(data);
+    }
 
+    function parseM3U(data) {
+        const lines = data.split('\n');
+        let name = ""; let logo = ""; let group = "";
         lines.forEach(line => {
             if (line.includes('#EXTINF:')) {
                 name = line.split(',').pop().trim();
                 logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
+                group = (line.match(/group-title="([^"]+)"/) || [])[1] || "General";
             } else if (line.startsWith('http')) {
-                const card = document.createElement('div');
-                card.className = 'card'; card.tabIndex = 0;
-                card.innerHTML = `<div class="logo-box">${logo ? `<img src="${logo}">` : `<span>${name[0]}</span>`}</div><div class="name">${name}</div>`;
-                card.onclick = () => playChannel(line.trim());
-                grid.appendChild(card);
+                allChannels.push({ name, url: line.trim(), logo, group });
             }
         });
+        renderGrid(allChannels);
     }
+
+    function renderGrid(list) {
+        const grid = document.getElementById('channel-grid');
+        grid.innerHTML = '';
+        list.forEach((ch, index) => {
+            const card = document.createElement('div');
+            card.className = `card ${favorites.includes(ch.url) ? 'is-favorite' : ''}`;
+            card.tabIndex = 0;
+            card.innerHTML = `<div class="fav-star">★</div><div class="logo-box">${ch.logo ? `<img data-src="${ch.logo}">` : `<span>${ch.name.charAt(0)}</span>`}</div><div class="name">${ch.name}</div>`;
+            
+            card.onclick = () => playChannel(ch.url);
+            card.ondblclick = () => toggleFullScreen(); // ডাবল ক্লিকে ফুলস্ক্রিন
+            
+            grid.appendChild(card);
+        });
+        lazyLoad();
+    }
+
+    function playChannel(url) {
+        player.src({ src: url, type: 'application/x-mpegURL' });
+        player.play();
+    }
+
+    function toggleFullScreen() {
+        if (!player.isFullscreen()) {
+            player.requestFullscreen();
+        } else {
+            player.exitFullscreen();
+        }
+    }
+
+    // রিমোট বাটন হ্যান্ডলিং
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') toggleFullScreen(); // আপ বাটন চাপলে ফুলস্ক্রিন
+        if (e.key === 'Escape') player.exitFullscreen();
+    });
+
+    function searchChannel() {
+        const query = document.getElementById('search').value.toLowerCase();
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(query));
+        renderGrid(filtered);
+    }
+
+    function filterCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        const filtered = cat === 'All' ? allChannels : (cat === 'Favorite' ? allChannels.filter(c => favorites.includes(c.url)) : allChannels.filter(c => c.group.includes(cat) || c.name.includes(cat)));
+        renderGrid(filtered);
+    }
+
+    function lazyLoad() {
+        const images = document.querySelectorAll('img[data-src]');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.getAttribute('data-src');
+                    img.onload = () => img.classList.add('loaded');
+                    observer.unobserve(img);
+                }
+            });
+        });
+        images.forEach(img => observer.observe(img));
+    }
+
     init();
 </script>
 </body>
