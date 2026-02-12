@@ -3,228 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Live TV - Studio Experience</title>
-    
+    <title>Ultimate Android TV Player</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
     <style>
         :root {
-            --primary-color: #e50914;
-            --bg-color: #080808;
-            --glass: rgba(255, 255, 255, 0.1);
+            --bg: #050505;
+            --accent: #ff0000;
+            --card-bg: #1a1a1a;
+            --text: #ffffff;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: #fff;
-            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             overflow: hidden;
             display: flex;
+            flex-direction: column;
             height: 100vh;
         }
 
-        /* Sidebar Styling */
-        #sidebar {
-            width: 350px;
-            background: linear-gradient(180deg, #141414 0%, #000 100%);
+        /* Top Player Section */
+        #player-section {
+            height: 60vh;
+            background: #000;
             display: flex;
-            flex-direction: column;
-            border-right: 1px solid #333;
-            z-index: 10;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .brand {
-            padding: 30px 20px;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .video-js { width: 100% !important; height: 100% !important; }
+
+        /* Navigation Bar */
+        .nav-bar {
+            padding: 15px 40px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            position: absolute;
+            top: 0; width: 100%; z-index: 100;
+            box-sizing: border-box;
         }
 
-        .search-box {
-            padding: 0 20px 20px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 25px;
-            border: none;
-            background: var(--glass);
-            color: white;
-            outline: none;
-            border: 1px solid #444;
-        }
-
-        #channel-list {
-            flex: 1;
+        /* Bottom Grid Section */
+        #content-section {
+            height: 40vh;
+            padding: 20px 40px;
             overflow-y: auto;
-            padding: 10px 20px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary-color) transparent;
         }
 
-        /* Channel Item */
-        .channel-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            margin-bottom: 10px;
-            background: var(--glass);
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            padding-bottom: 50px;
+        }
+
+        /* Channel Card */
+        .channel-card {
+            background: var(--card-bg);
             border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-
-        .channel-item:hover, .channel-item:focus {
-            background: var(--primary-color);
-            transform: scale(1.03);
-            outline: none;
-            box-shadow: 0 5px 15px rgba(229, 9, 20, 0.4);
-        }
-
-        .channel-item i {
-            margin-right: 15px;
-            font-size: 20px;
-        }
-
-        /* Main Content */
-        #main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+            border: 3px solid transparent;
+            text-align: center;
             position: relative;
         }
 
-        .player-wrapper {
-            width: 100%;
-            height: 100%;
-            background: #000;
+        .channel-card:focus, .channel-card:hover {
+            transform: scale(1.1);
+            border-color: var(--accent);
+            outline: none;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+        }
+
+        .channel-thumb {
+            height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: linear-gradient(45deg, #333, #222);
+            font-size: 40px;
+            font-weight: bold;
+            color: var(--accent);
         }
 
-        .video-js {
-            width: 100% !important;
-            height: 100% !important;
+        .channel-name {
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .now-playing {
+        /* Custom Scrollbar */
+        #content-section::-webkit-scrollbar { width: 0px; }
+
+        .now-playing-label {
             position: absolute;
-            bottom: 30px;
-            left: 30px;
-            background: rgba(0,0,0,0.7);
-            padding: 15px 25px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            border-left: 5px solid var(--primary-color);
-            z-index: 5;
+            top: 20px;
+            left: 20px;
+            background: var(--accent);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
         }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .channel-item { animation: fadeIn 0.5s ease forwards; }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <div class="brand">
-        <i class="fas fa-tv"></i> LIVE TV PRO
+<div id="player-section">
+    <div class="nav-bar">
+        <div style="font-size: 24px; font-weight: 900;"><i class="fas fa-play-circle"></i> LUXE TV</div>
+        <div id="clock">00:00 PM</div>
     </div>
-    
-    <div class="search-box">
-        <input type="text" id="search" placeholder="চ্যানেল খুঁজুন..." onkeyup="filterChannels()">
-    </div>
-
-    <div id="channel-list">
-        </div>
+    <video id="main-player" class="video-js vjs-big-play-centered" controls preload="auto"></video>
 </div>
 
-<div id="main">
-    <div class="player-wrapper">
-        <video id="tv-player" class="video-js vjs-big-play-centered" controls preload="auto"></video>
-    </div>
-
-    <div class="now-playing" id="status">
-        <small style="color: #aaa; display: block;">এখন দেখছেন</small>
-        <span id="current-channel-name" style="font-size: 20px; font-weight: bold;">চ্যানেল নির্বাচন করুন</span>
-    </div>
+<div id="content-section">
+    <h3 style="margin-bottom: 20px; opacity: 0.7;">সবগুলো চ্যানেল</h3>
+    <div class="grid-container" id="grid">
+        </div>
 </div>
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
-    const playlistUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    const player = videojs('tv-player');
-    let allChannels = [];
+    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
+    const player = videojs('main-player');
 
-    async function fetchPlaylist() {
+    async function init() {
         try {
-            const response = await fetch(playlistUrl);
-            const data = await response.text();
-            parseM3U(data);
-        } catch (error) {
-            document.getElementById('channel-list').innerHTML = "<p style='color:red'>লোড করতে ব্যর্থ!</p>";
-        }
+            const res = await fetch(m3uUrl);
+            const text = await res.text();
+            const channels = parseM3U(text);
+            renderGrid(channels);
+            updateClock();
+            setInterval(updateClock, 60000);
+        } catch (e) { console.error("Error loading playlist"); }
     }
 
-    function parseM3U(content) {
-        const lines = content.split('\n');
-        let currentName = '';
-
+    function parseM3U(data) {
+        const channels = [];
+        const lines = data.split('\n');
+        let currentName = "";
+        
         lines.forEach(line => {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                currentName = line.split(',').pop();
+            if (line.includes('#EXTINF:')) {
+                currentName = line.split(',').pop().trim();
             } else if (line.startsWith('http')) {
-                allChannels.push({ name: currentName, url: line });
+                channels.push({ name: currentName, url: line.trim() });
             }
         });
-        renderChannels(allChannels);
+        return channels;
     }
 
-    function renderChannels(channels) {
-        const container = document.getElementById('channel-list');
-        container.innerHTML = '';
-        
-        channels.forEach((channel, index) => {
-            const div = document.createElement('div');
-            div.className = 'channel-item';
-            div.tabIndex = 0;
-            div.innerHTML = `<i class="fas fa-play-circle"></i> ${channel.name}`;
+    function renderGrid(channels) {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+
+        channels.forEach((ch, index) => {
+            const card = document.createElement('div');
+            card.className = 'channel-card';
+            card.tabIndex = 0; // রিমোটের জন্য জরুরি
             
-            div.onclick = () => playChannel(channel.name, channel.url);
-            div.onkeydown = (e) => { if(e.key === 'Enter') playChannel(channel.name, channel.url); };
+            // লোগো না থাকলে নামের প্রথম অক্ষর দেখাবে
+            const firstLetter = ch.name.charAt(0).toUpperCase();
             
-            container.appendChild(div);
+            card.innerHTML = `
+                <div class="channel-thumb">${firstLetter}</div>
+                <div class="channel-name">${ch.name}</div>
+            `;
+
+            card.onclick = () => play(ch.url, ch.name);
+            card.onkeydown = (e) => { if(e.key === 'Enter') play(ch.url, ch.name); };
+            
+            grid.appendChild(card);
         });
     }
 
-    function playChannel(name, url) {
-        document.getElementById('current-channel-name').innerText = name;
+    function play(url, name) {
         player.src({ src: url, type: 'application/x-mpegURL' });
         player.play();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function filterChannels() {
-        const query = document.getElementById('search').value.toLowerCase();
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(query));
-        renderChannels(filtered);
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
 
-    fetchPlaylist();
+    init();
 </script>
 
 </body>
