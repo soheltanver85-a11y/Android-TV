@@ -3,147 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Android TV Live</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <title>Live TV Player - Android TV</title>
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; }
-        
-        /* ভিডিওর জন্য ফুল স্ক্রিন এরিয়া */
-        #video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        video { width: 100%; height: 100%; object-fit: contain; }
-
-        /* টিভির জন্য নিরাপদ এলাকা (Safe Zone) */
-        #ui-layer {
-            position: absolute;
-            bottom: 8%; /* নিচ থেকে অনেক উপরে রাখা হয়েছে যাতে ফ্রেম না কাটে */
-            left: 5%; right: 5%;
-            z-index: 10;
-            transition: opacity 0.5s;
-        }
-
-        .title { font-size: 30px; margin-bottom: 15px; text-shadow: 2px 2px 5px #000; font-weight: bold; }
-
-        /* চ্যানেল লিস্টের ডিজাইন */
-        #channel-row {
-            display: flex;
-            gap: 20px;
-            overflow-x: auto;
-            padding: 20px 0;
-            scroll-behavior: smooth;
-        }
-        #channel-row::-webkit-scrollbar { display: none; }
-
-        /* কার্ড যা টিভিতে ভালো দেখাবে */
-        .channel-card {
-            flex: 0 0 250px;
-            height: 140px;
-            background: #222;
-            border: 5px solid transparent;
-            border-radius: 15px;
+        body {
+            background-color: #0f0f0f;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            outline: none;
-            transition: 0.3s;
         }
-
-        .channel-card:focus {
-            transform: scale(1.1);
-            border-color: #ff0000;
-            background: #333;
+        .header {
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            background: linear-gradient(to bottom, #1a1a1a, transparent);
         }
-
-        .channel-card img { width: 60%; height: 50%; object-fit: contain; pointer-events: none; }
-        .channel-card span { margin-top: 10px; font-size: 18px; pointer-events: none; }
-
-        .hidden { opacity: 0; pointer-events: none; }
+        .video-container {
+            width: 90%;
+            max-width: 1000px;
+            aspect-ratio: 16 / 9;
+            border: 4px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        .controls-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #222;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+        /* টিভি রিমোট ফ্রেন্ডলি ফোকাস */
+        .video-js:focus {
+            outline: 4px solid #e50914;
+        }
     </style>
 </head>
 <body>
 
-<div id="video-container">
-    <video id="tv-player" autoplay playsinline></video>
-</div>
+    <div class="header">
+        <h1>আমার লাইভ টিভি</h1>
+        <p>সরাসরি স্ট্রিমিং - অ্যান্ড্রয়েড টিভি সংস্করণ</p>
+    </div>
 
-<div id="ui-layer">
-    <div class="title" id="ch-title">লোডিং...</div>
-    <div id="channel-row"></div>
-</div>
+    <div class="video-container">
+        <video
+            id="my-video"
+            class="video-js vjs-big-play-centered vjs-fluid"
+            controls
+            preload="auto"
+            data-setup='{}'>
+            <source src="https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2" type="application/x-mpegURL">
+            <p class="vjs-no-js">
+                ভিডিওটি দেখার জন্য আপনার ব্রাউজারে জাভাস্ক্রিপ্ট এনাবল করুন।
+            </p>
+        </video>
+    </div>
 
-<script>
-    const m3uUrl = "https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2";
-    const video = document.getElementById('tv-player');
-    const row = document.getElementById('channel-row');
-    let hls = new Hls();
-    let timer;
+    <div class="controls-info">
+        💡 <strong>টিপস:</strong> রিমোটের 'OK' বাটন চেপে প্লে/পজ করুন এবং ফুলস্ক্রিন আইকন সিলেক্ট করে বড় পর্দায় দেখুন।
+    </div>
 
-    async function loadChannels() {
-        try {
-            const res = await fetch(m3uUrl);
-            const data = await res.text();
-            parseChannels(data);
-        } catch (e) { document.getElementById('ch-title').innerText = "ইন্টারনেট কানেকশন চেক করুন"; }
-    }
-
-    function parseChannels(text) {
-        const lines = text.split('\n');
-        lines.forEach((line, i) => {
-            if (line.includes("#EXTINF")) {
-                const name = line.split(',')[1] || "Channel";
-                const logo = line.match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                const url = lines[i+1]?.trim();
-                
-                if (url && url.startsWith('http')) {
-                    const card = document.createElement('div');
-                    card.className = 'channel-card';
-                    card.tabIndex = 0;
-                    card.innerHTML = `<img src="${logo}"><span>${name}</span>`;
-                    
-                    card.onfocus = () => {
-                        showUI();
-                        document.getElementById('ch-title').innerText = name;
-                        playStream(url);
-                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                    };
-                    card.onclick = () => hideUI();
-                    row.appendChild(card);
-                }
-            }
-        });
-        setTimeout(() => row.children[0]?.focus(), 1500);
-    }
-
-    function playStream(url) {
-        if (Hls.isSupported()) {
-            hls.destroy();
-            hls = new Hls();
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-            video.play();
-        }
-    }
-
-    // রিমোট বাটন (D-Pad) হ্যান্ডলিং
-    document.addEventListener('keydown', (e) => {
-        showUI();
-        const active = document.activeElement;
-        if (e.keyCode === 39) active.nextElementSibling?.focus(); // Right
-        if (e.keyCode === 37) active.previousElementSibling?.focus(); // Left
-        if (e.keyCode === 13 || e.keyCode === 38) hideUI(); // OK or Up
-    });
-
-    function showUI() {
-        document.getElementById('ui-layer').classList.remove('hidden');
-        clearTimeout(timer);
-        timer = setTimeout(hideUI, 8000);
-    }
-    function hideUI() { document.getElementById('ui-layer').classList.add('hidden'); }
-
-    loadChannels();
-</script>
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 </body>
 </html>
