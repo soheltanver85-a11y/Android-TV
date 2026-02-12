@@ -1,161 +1,206 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Android TV - Category Edition</title>
-    
-    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
-    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeno TV - Android TV Edition</title>
 
-    <style>
-        :root { --primary: #e50914; --bg: #050505; --card-bg: #1a1a1a; }
-        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; font-family: 'Roboto', sans-serif; }
+<link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+<script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 
-        /* প্লেয়ার এরিয়া */
-        #player-container { width: 100%; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        .video-js { width: 100% !important; height: 100% !important; }
+<style>
+:root{
+--primary:#e50914;
+--bg:#000;
+--card:#1b1b1b;
+}
 
-        /* ক্যাটাগরি মেনু (বাম পাশে) */
-        .sidebar {
-            position: absolute; left: 0; top: 0; width: 250px; height: 100%;
-            background: linear-gradient(to right, rgba(0,0,0,0.9), transparent);
-            display: flex; flex-direction: column; padding: 50px 20px; z-index: 10;
-            transition: 0.4s; transform: translateX(-200px); opacity: 0;
-        }
-        .sidebar.active { transform: translateX(0); opacity: 1; }
-        .cat-item {
-            padding: 15px; margin: 10px 0; border-radius: 10px; cursor: pointer;
-            font-size: 1.2rem; transition: 0.3s; border: 2px solid transparent;
-        }
-        .cat-item:focus, .cat-item.selected { background: var(--primary); border-color: #fff; outline: none; }
+body{
+margin:0;
+background:var(--bg);
+color:#fff;
+font-family:sans-serif;
+overflow:hidden;
+}
 
-        /* চ্যানেল লিস্ট (নিচে) */
-        .bottom-ui {
-            position: absolute; bottom: 0; width: 100%; padding: 20px 50px;
-            background: linear-gradient(to top, rgba(0,0,0,1), transparent);
-            z-index: 5; transition: 0.5s;
-        }
-        .channel-row { display: flex; overflow-x: auto; gap: 20px; padding: 20px 0; scroll-behavior: smooth; }
-        .channel-row::-webkit-scrollbar { display: none; }
+/* Player */
+#player-container{
+position:absolute;
+width:100%;
+height:100vh;
+z-index:1;
+}
 
-        .card {
-            min-width: 200px; height: 110px; background: var(--card-bg);
-            border-radius: 12px; border: 4px solid #333; position: relative;
-            outline: none; transition: 0.3s; display: flex; align-items: center; justify-content: center;
-            text-align: center; font-weight: bold;
-        }
-        .card:focus { border-color: var(--primary); transform: scale(1.1); background: #222; }
+/* Sidebar */
+.sidebar{
+position:absolute;
+left:0;
+top:0;
+width:260px;
+height:100%;
+background:rgba(0,0,0,0.85);
+padding:60px 20px;
+z-index:5;
+display:flex;
+flex-direction:column;
+gap:15px;
+}
 
-        /* দুলন্ত স্টার আইকন */
-        .star { position: absolute; top: 10px; right: 10px; color: #ffca28; display: none; animation: dangle 2s infinite; }
-        .is-fav .star { display: block; }
-        @keyframes dangle { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+.cat-item{
+padding:15px;
+border-radius:10px;
+background:#111;
+outline:none;
+transition:0.2s;
+}
 
-        .ui-hide { opacity: 0; transform: translateY(50px); pointer-events: none; }
-    </style>
+.cat-item:focus{
+background:var(--primary);
+transform:scale(1.05);
+}
+
+/* Bottom Channel UI */
+.bottom-ui{
+position:absolute;
+bottom:0;
+width:100%;
+padding:20px 80px;
+background:linear-gradient(to top,black,transparent);
+z-index:4;
+}
+
+.channel-row{
+display:flex;
+gap:25px;
+overflow:hidden;
+}
+
+.card{
+min-width:220px;
+height:120px;
+background:var(--card);
+border-radius:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+outline:none;
+transition:0.2s;
+border:3px solid transparent;
+}
+
+.card:focus{
+border-color:var(--primary);
+transform:scale(1.1);
+background:#222;
+}
+
+.ui-hide{
+opacity:0;
+pointer-events:none;
+transition:0.3s;
+}
+</style>
 </head>
-<body onmousemove="showUI()">
+
+<body>
 
 <div id="player-container">
-    <video id="tv-player" class="video-js vjs-default-skin" autoplay muted playsinline></video>
+<video id="tv-player" class="video-js vjs-default-skin" autoplay playsinline></video>
 </div>
 
 <div class="sidebar" id="sidebar">
-    <h2 style="color: var(--primary); margin-bottom: 20px;">Categories</h2>
-    <div class="cat-item" tabindex="0" onclick="filterCat('All')">সকল চ্যানেল</div>
-    <div class="cat-item" tabindex="0" onclick="filterCat('News')">সংবাদ</div>
-    <div class="cat-item" tabindex="0" onclick="filterCat('Sports')">খেলাধুলা</div>
-    <div class="cat-item" tabindex="0" onclick="filterCat('Movies')">মুভি</div>
-    <div class="cat-item" tabindex="0" onclick="filterCat('Favorites')">প্রিয় চ্যানেল</div>
+<div class="cat-item" tabindex="0" onclick="filterCat('All')">All</div>
+<div class="cat-item" tabindex="0" onclick="filterCat('News')">News</div>
+<div class="cat-item" tabindex="0" onclick="filterCat('Sports')">Sports</div>
+<div class="cat-item" tabindex="0" onclick="filterCat('Movies')">Movies</div>
 </div>
 
 <div class="bottom-ui" id="bottomUI">
-    <h3 id="currentCatName">সকল চ্যানেল</h3>
-    <div class="channel-row" id="channelList"></div>
+<h3 id="currentCatName">All</h3>
+<div class="channel-row" id="channelList"></div>
 </div>
 
 <script>
-    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    const player = videojs('tv-player');
-    let allChannels = [], currentChannels = [], favorites = JSON.parse(localStorage.getItem('favs')) || [];
-    let uiTimer;
+const m3uUrl='YOUR_M3U_LINK';
+const player=videojs('tv-player');
 
-    async function fetchData() {
-        const res = await fetch(m3uUrl);
-        const data = await res.text();
-        parseM3U(data);
-    }
+let allChannels=[],currentChannels=[];
+let uiTimer;
 
-    function parseM3U(data) {
-        const lines = data.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes('#EXTINF')) {
-                const name = lines[i].split(',')[1] || "Channel";
-                const url = lines[i + 1]?.trim();
-                // ক্যাটাগরি খোঁজা (যদি M3U তে group-title থাকে)
-                const group = lines[i].match(/group-title="([^"]+)"/)?.[1] || "All";
-                if(url) allChannels.push({ name, url, group });
-            }
-        }
-        filterCat('All');
-    }
+async function fetchData(){
+const res=await fetch(m3uUrl);
+const data=await res.text();
+parseM3U(data);
+}
 
-    function filterCat(cat) {
-        document.getElementById('currentCatName').innerText = cat;
-        if (cat === 'All') currentChannels = allChannels;
-        else if (cat === 'Favorites') currentChannels = allChannels.filter(c => favorites.includes(c.url));
-        else currentChannels = allChannels.filter(c => c.group.includes(cat));
-        renderChannels();
-    }
+function parseM3U(data){
+const lines=data.split('\n');
+for(let i=0;i<lines.length;i++){
+if(lines[i].includes('#EXTINF')){
+const name=lines[i].split(',')[1]||"Channel";
+const url=lines[i+1]?.trim();
+const group=lines[i].match(/group-title="([^"]+)"/)?.[1]||"All";
+if(url) allChannels.push({name,url,group});
+}
+}
+filterCat('All');
+}
 
-    function renderChannels() {
-        const list = document.getElementById('channelList');
-        list.innerHTML = '';
-        currentChannels.forEach((ch, idx) => {
-            const card = document.createElement('div');
-            card.className = `card ${favorites.includes(ch.url) ? 'is-fav' : ''}`;
-            card.tabIndex = 0;
-            card.innerHTML = `<i class="fa fa-star star"></i><div>${ch.name}</div>`;
+function filterCat(cat){
+document.getElementById('currentCatName').innerText=cat;
+if(cat==='All') currentChannels=allChannels;
+else currentChannels=allChannels.filter(c=>c.group.includes(cat));
+renderChannels();
+}
 
-            card.onfocus = () => {
-                showUI();
-                player.src({ type: 'application/x-mpegURL', src: ch.url });
-                player.play();
-                card.scrollIntoView({ behavior: "smooth", inline: "center" });
-            };
+function renderChannels(){
+const list=document.getElementById('channelList');
+list.innerHTML='';
 
-            card.onkeydown = (e) => {
-                if (e.key === 'ArrowUp') document.querySelector('.cat-item').focus();
-                if (e.key === 'ArrowRight') card.nextSibling?.focus();
-                if (e.key === 'ArrowLeft') card.previousSibling?.focus();
-                if (e.key === 'Enter') { /* লং প্রেস এর পরিবর্তে এন্টার দিয়েও ফেভারিট করা যাবে */
-                    toggleFav(ch.url);
-                }
-            };
-            list.appendChild(card);
-        });
-    }
+currentChannels.forEach((ch,index)=>{
+const card=document.createElement('div');
+card.className='card';
+card.tabIndex=0;
+card.innerHTML=ch.name;
 
-    function toggleFav(url) {
-        if (favorites.includes(url)) favorites = favorites.filter(f => f !== url);
-        else favorites.push(url);
-        localStorage.setItem('favs', JSON.stringify(favorites));
-        renderChannels();
-    }
+card.onfocus=()=>{
+player.src({type:'application/x-mpegURL',src:ch.url});
+player.play();
+card.scrollIntoView({behavior:"smooth",inline:"center"});
+showUI();
+};
 
-    function showUI() {
-        document.getElementById('bottomUI').classList.remove('ui-hide');
-        document.getElementById('sidebar').classList.add('active');
-        clearTimeout(uiTimer);
-        uiTimer = setTimeout(() => {
-            document.getElementById('bottomUI').classList.add('ui-hide');
-            document.getElementById('sidebar').classList.remove('active');
-        }, 8000);
-    }
+card.onkeydown=(e)=>{
+if(e.key==='ArrowRight') card.nextSibling?.focus();
+if(e.key==='ArrowLeft') card.previousSibling?.focus();
+if(e.key==='ArrowUp') document.querySelector('.cat-item').focus();
+};
 
-    fetchData();
+list.appendChild(card);
+});
+
+/* First channel auto focus */
+setTimeout(()=>{
+document.querySelector('.card')?.focus();
+},500);
+}
+
+function showUI(){
+document.getElementById('bottomUI').classList.remove('ui-hide');
+clearTimeout(uiTimer);
+uiTimer=setTimeout(()=>{
+document.getElementById('bottomUI').classList.add('ui-hide');
+},6000);
+}
+
+/* Android TV Remote Back Button */
+document.addEventListener('keydown',function(e){
+if(e.keyCode===461 || e.keyCode===8){
+document.querySelector('.card')?.focus();
+}
+});
+
+fetchData();
 </script>
 </body>
 </html>
