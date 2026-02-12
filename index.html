@@ -1,47 +1,46 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Android TV Pro - Favorite Edition</title>
-    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+    <title>Ultimate Android TV Pro</title>
+    
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        :root { --primary-color: #ff0000; --bg-dark: #050505; --fav-color: #ffca28; }
-        body { background: var(--bg-dark); color: #fff; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        :root { --primary: #ff0000; --bg: #000; }
+        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; font-family: sans-serif; }
 
-        #player { width: 100%; height: 100vh; background: #000; position: absolute; top: 0; left: 0; }
+        /* ভিডিও প্লেয়ার এলাকা */
+        .video-wrapper { width: 100%; height: 100vh; position: absolute; top: 0; left: 0; }
+        .video-js { width: 100% !important; height: 100% !important; }
 
+        /* চ্যানেল লিস্ট */
         .channel-list { 
-            position: absolute; bottom: 0; width: 100%; height: 28vh;
+            position: absolute; bottom: 0; width: 100%; height: 30vh;
             display: flex; overflow-x: auto; padding: 20px 40px; gap: 20px; 
-            background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
-            align-items: center; transition: transform 0.5s ease; z-index: 90;
+            background: linear-gradient(to top, rgba(0,0,0,1), transparent);
+            align-items: center; transition: 0.5s; z-index: 99;
             scroll-behavior: smooth;
         }
 
         .channel-card {
-            min-width: 200px; height: 120px; background: rgba(30,30,30,0.9);
-            border-radius: 12px; border: 4px solid #333; position: relative;
+            min-width: 220px; height: 130px; background: rgba(40,40,40,0.8);
+            border-radius: 15px; border: 4px solid #333; position: relative;
             cursor: pointer; outline: none; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        .channel-card:focus { border-color: var(--primary-color); transform: scale(1.15); background: #111; z-index: 10; }
-
-        .channel-logo { width: 60px; height: 60px; border-radius: 50%; background: #444; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; position: relative; }
-        .channel-logo img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* স্টার চিহ্ন এবং দুলন্ত অ্যানিমেশন */
-        .fav-star-icon {
-            position: absolute; top: -5px; right: -5px; color: var(--fav-color);
-            font-size: 1.4rem; display: none;
-            text-shadow: 0 0 10px rgba(0,0,0,0.8);
-            animation: dangle 2s infinite ease-in-out;
-            z-index: 20;
+        /* রিমোট ফোকাস ও দুলন্ত স্টার */
+        .channel-card:focus { border-color: var(--primary); transform: scale(1.1); background: #111; }
+        
+        .fav-star { 
+            position: absolute; top: 10px; right: 10px; color: #ffca28; 
+            font-size: 1.5rem; display: none; animation: dangle 2s infinite ease-in-out;
         }
-        .is-favorite .fav-star-icon { display: block; }
+        .is-fav .fav-star { display: block; }
 
         @keyframes dangle {
             0%, 100% { transform: rotate(-10deg); }
@@ -49,115 +48,100 @@
         }
 
         .channel-list::-webkit-scrollbar { display: none; }
+        .hide-ui { transform: translateY(100%); }
     </style>
 </head>
 <body onclick="showUI()">
 
-<div id="player"></div>
+<div class="video-wrapper">
+    <video id="tv-player" class="video-js vjs-default-skin" controls preload="auto" autoplay data-setup='{}'></video>
+</div>
+
 <div class="channel-list" id="channelList"></div>
 
 <script>
     const playlistUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    let player, channels = [], favorites = JSON.parse(localStorage.getItem('favs')) || [];
+    let player = videojs('tv-player');
+    let channels = [], favorites = JSON.parse(localStorage.getItem('favs')) || [];
     let uiTimer, pressTimer;
 
-    async function init() {
-        const response = await fetch(playlistUrl);
-        const data = await response.text();
-        parseM3U(data);
-        showUI();
-    }
-
-    function parseM3U(data) {
-        const lines = data.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].startsWith('#EXTINF')) {
-                const info = lines[i];
-                const name = info.split(',')[1] || "Channel";
-                const url = lines[i + 1]?.trim();
-                const logoMatch = info.match(/tvg-logo="([^"]+)"/);
-                const logo = logoMatch ? logoMatch[1] : null;
-                if(url) channels.push({ name, url, logo });
+    async function loadApp() {
+        try {
+            const res = await fetch(playlistUrl);
+            const data = await res.text();
+            const lines = data.split('\n');
+            
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('#EXTINF')) {
+                    const name = lines[i].split(',')[1] || "Channel";
+                    const url = lines[i + 1]?.trim();
+                    if(url) channels.push({ name, url });
+                }
             }
-        }
-        renderChannels();
+            renderUI();
+        } catch (e) { alert("প্লেলিস্ট লোড হচ্ছে না!"); }
     }
 
-    function renderChannels() {
-        const container = document.getElementById('channelList');
-        container.innerHTML = '';
-        channels.forEach((ch, index) => {
+    function renderUI() {
+        const list = document.getElementById('channelList');
+        list.innerHTML = '';
+
+        // ফেভারিট চ্যানেলগুলোকে শুরুতে নিয়ে আসা
+        let sortedChannels = [...channels].sort((a, b) => {
+            return favorites.includes(b.url) - favorites.includes(a.url);
+        });
+
+        sortedChannels.forEach((ch, index) => {
             const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
-            card.className = `channel-card ${isFav ? 'is-favorite' : ''}`;
+            card.className = `channel-card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
-            
-            const logoHtml = ch.logo ? `<img src="${ch.logo}">` : `<span>${ch.name[0]}</span>`;
-            card.innerHTML = `
-                <i class="fa-solid fa-star fav-star-icon"></i>
-                <div class="channel-logo">${logoHtml}</div>
-                <div style="font-size: 0.9rem; padding: 0 10px;">${ch.name}</div>
-            `;
+            card.innerHTML = `<i class="fa-solid fa-star fav-star"></i><div style="font-weight:bold">${ch.name}</div>`;
 
-            // ফোকাস হলে প্লে হবে
             card.onfocus = () => {
                 showUI();
-                playVideo(ch.url);
+                player.src({ type: 'application/x-mpegURL', src: ch.url });
+                player.play();
                 card.scrollIntoView({ behavior: "smooth", inline: "center" });
             };
 
-            // লং প্রেস শনাক্ত করা (রিমোট বা মাউস এর জন্য)
-            const startPress = () => {
-                pressTimer = setTimeout(() => {
-                    toggleFavorite(ch.url);
-                }, 1000); // ১ সেকেন্ড ধরে রাখলে ফেভারিট হবে
-            };
-            const endPress = () => clearTimeout(pressTimer);
-
-            card.addEventListener('mousedown', startPress);
-            card.addEventListener('mouseup', endPress);
-            card.addEventListener('mouseleave', endPress);
-
-            // রিমোটের 'OK' বাটন লং প্রেস হ্যান্ডেল
+            // লং প্রেস লজিক (রিমোটের OK বাটন ১ সেকেন্ড ধরে রাখলে)
             card.addEventListener('keydown', (e) => {
                 showUI();
-                if (e.key === 'Enter') startPress();
+                if (e.key === 'Enter') {
+                    pressTimer = setTimeout(() => toggleFav(ch.url), 1000);
+                }
                 if (e.key === 'ArrowRight') card.nextSibling?.focus();
                 if (e.key === 'ArrowLeft') card.previousSibling?.focus();
             });
+
             card.addEventListener('keyup', (e) => {
-                if (e.key === 'Enter') endPress();
+                if (e.key === 'Enter') clearTimeout(pressTimer);
             });
 
-            container.appendChild(card);
+            list.appendChild(card);
         });
+
+        // প্রথম চ্যানেলে ফোকাস
+        setTimeout(() => document.querySelector('.channel-card').focus(), 1000);
     }
 
-    function toggleFavorite(url) {
+    function toggleFav(url) {
         if (favorites.includes(url)) favorites = favorites.filter(f => f !== url);
         else favorites.push(url);
         localStorage.setItem('favs', JSON.stringify(favorites));
-        renderChannels(); // পুনরায় রেন্ডার করে স্টার দেখানো
-    }
-
-    function playVideo(url) {
-        if (!player) {
-            player = new Clappr.Player({ source: url, parentId: "#player", width: '100%', height: '100%', autoPlay: true });
-        } else {
-            player.load(url);
-            player.play();
-        }
+        renderUI(); // লিস্ট রিফ্রেশ
     }
 
     function showUI() {
-        document.getElementById('channelList').style.transform = "translateY(0)";
+        document.getElementById('channelList').classList.remove('hide-ui');
         clearTimeout(uiTimer);
         uiTimer = setTimeout(() => {
-            document.getElementById('channelList').style.transform = "translateY(110%)";
-        }, 8000);
+            document.getElementById('channelList').classList.add('hide-ui');
+        }, 7000);
     }
 
-    init();
+    loadApp();
 </script>
 </body>
 </html>
