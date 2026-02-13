@@ -3,37 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Ultimate</title>
+    <title>Zeno TV - Premium Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার ও ঘড়ি */
+        /* প্লেয়ার সেকশন (৫০%) */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 50px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 45px; padding: 10px 25px; border-radius: 12px; display: none; z-index: 1000; font-weight: bold; }
 
-        /* জ্বলজ্বলে Zeno TV এবং ট্যাব */
+        /* UI লেআউট */
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
-        .tabs-container { display: flex; align-items: center; gap: 12px; padding: 12px 30px; background: #111; position: sticky; top: 0; z-index: 50; }
+        
+        /* ট্যাব কন্টেইনার */
+        .tabs-container { 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 12px 30px; background: #111; position: sticky; top: 0; z-index: 50;
+        }
         
         .zeno-logo { font-weight: bold; font-size: 20px; color: #fff; text-shadow: 0 0 10px #ff0000; animation: glow 1.5s infinite alternate; margin-right: 15px; }
-        @keyframes glow { from { text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000; } to { text-shadow: 0 0 20px #ff0000, 0 0 30px #ff4d4d; transform: scale(1.05); } }
+        @keyframes glow { from { text-shadow: 0 0 5px #ff0000; } to { text-shadow: 0 0 20px #ff0000; transform: scale(1.05); } }
 
-        .tab { padding: 8px 18px; background: #222; border-radius: 20px; cursor: pointer; border: 2px solid transparent; outline: none; font-size: 14px; }
-        .tab:focus, .card:focus, .m-btn:focus, .apk-btn:focus { background: var(--accent); border-color: white; transform: scale(1.05); }
+        .tab { padding: 8px 15px; background: #222; border-radius: 20px; cursor: pointer; border: 2px solid transparent; outline: none; font-size: 14px; }
+        .tab:focus, .card:focus, .m-btn:focus, .apk-btn:focus, .recent-pill:focus, #search:focus { background: var(--accent); border-color: white; transform: scale(1.05); outline: none; }
 
-        /* ইউনিক APK বাটন */
-        .apk-btn { display: flex; align-items: center; gap: 8px; background: linear-gradient(45deg, #00c853, #b2ff59); color: #000; padding: 8px 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-decoration: none; border: none; outline: none; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,200,83,0.3); }
+        /* APK ও সার্চ বাটন */
+        .apk-btn { 
+            display: flex; align-items: center; gap: 5px; 
+            background: linear-gradient(45deg, #00c853, #b2ff59); 
+            color: #000; padding: 6px 15px; border-radius: 12px; 
+            font-weight: bold; cursor: pointer; text-decoration: none; border: 2px solid transparent;
+        }
+        #search { margin-left: auto; background:#222; color:white; border:none; padding:8px 15px; border-radius:15px; outline: none; width: 140px; }
 
-        /* গ্রিড */
-        #main-content { padding: 15px 30px 100px 30px; }
-        .section-title { font-size: 18px; margin: 15px 0 10px; color: var(--fav-color); border-left: 4px solid var(--accent); padding-left: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        /* রিসেন্ট চ্যানেল (পিল স্টাইল - APK বাটনের মতো) */
+        #recent-section { padding: 10px 30px 5px; }
+        .recent-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+        .recent-pill { 
+            display: flex; align-items: center; gap: 8px; 
+            background: #222; padding: 6px 12px; border-radius: 12px; 
+            cursor: pointer; border: 2px solid transparent; font-size: 13px; font-weight: bold;
+        }
+        .recent-pill img { width: 20px; height: 20px; object-fit: contain; }
+
+        /* চ্যানেল গ্রিড */
+        #main-content { padding: 0px 30px 100px 30px; }
+        .section-title { font-size: 16px; margin: 15px 0 10px; color: var(--fav-color); border-left: 4px solid var(--accent); padding-left: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
         
-        .card { background: var(--card); border-radius: 12px; position: relative; cursor: pointer; border: 4px solid transparent; outline: none; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0044cc; color: white; font-size: 16px; font-weight: bold; padding: 3px 10px; border-bottom-right-radius: 12px; border-top-left-radius: 10px; }
+        .card { background: var(--card); border-radius: 12px; position: relative; cursor: pointer; border: 4px solid transparent; }
         .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #222; margin: 4px; border-radius: 8px; overflow: hidden; }
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
         .name { padding: 8px; font-size: 14px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -41,8 +61,10 @@
         /* মোডাল */
         #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: #1a1a1a; padding: 40px; border-radius: 20px; text-align: center; border: 3px solid var(--accent); }
-        .modal-btns { display: flex; justify-content: center; gap: 30px; margin-top: 30px; }
-        .m-btn { padding: 12px 50px; border-radius: 10px; border: 4px solid transparent; cursor: pointer; color: white; font-weight: bold; font-size: 22px; outline: none; }
+        .modal-btns { display: flex; justify-content: center; gap: 20px; margin-top: 25px; }
+        .m-btn { padding: 10px 40px; border-radius: 8px; border: 3px solid transparent; cursor: pointer; color: white; font-weight: bold; font-size: 20px; }
+        #confirm-no { background: #444; }
+        #confirm-yes { background: var(--accent); }
     </style>
 </head>
 <body>
@@ -59,16 +81,16 @@
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সবগুলো</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">ফেভারেট</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Sports')">Sports</div>
-        <a href="আপনার_লিংক_এখানে" class="apk-btn" tabindex="0">
-            <span>⬇</span> APK ডাউনলোড
-        </a>
+        <a href="APK_LINK_HERE" class="apk-btn" tabindex="0">⬇ APK</a>
+        <input type="text" id="search" placeholder="খুঁজুন..." readonly tabindex="0">
+    </div>
+
+    <div id="recent-section" style="display:none;">
+        <div class="section-title">সাম্প্রতিক চ্যানেল</div>
+        <div id="recent-container" class="recent-container"></div>
     </div>
 
     <div id="main-content">
-        <div id="recent-section" style="display:none;">
-            <div class="section-title">সম্প্রতি দেখা চ্যানেল</div>
-            <div id="recent-grid" class="grid"></div>
-        </div>
         <div class="section-title">সব চ্যানেল</div>
         <div id="channel-grid" class="grid"></div>
     </div>
@@ -78,8 +100,8 @@
     <div class="modal-content">
         <h2 id="modal-text"></h2>
         <div class="modal-btns">
-            <button id="confirm-no" class="m-btn" tabindex="0" style="background:#444;">না</button>
-            <button id="confirm-yes" class="m-btn" tabindex="0" style="background:var(--accent);">হ্যাঁ</button>
+            <button id="confirm-no" class="m-btn" tabindex="0">না</button>
+            <button id="confirm-yes" class="m-btn" tabindex="0">হ্যাঁ</button>
         </div>
     </div>
 </div>
@@ -107,7 +129,7 @@
                     allChannels.push({ name, url: line.trim(), logo, group });
                 }
             });
-            renderRecentGrid();
+            renderRecentPills();
             renderGrid(allChannels);
         } catch(e) { console.error(e); }
     }
@@ -115,61 +137,62 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch) => {
-            const card = createCard(ch);
+        list.forEach(ch => {
+            const card = document.createElement('div');
+            card.className = `card ${favorites.includes(ch.url) ? 'is-favorite' : ''}`;
+            card.tabIndex = 0;
+            card.innerHTML = `<div class="ch-index">${allChannels.findIndex(i => i.url === ch.url) + 1}</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
+            card.onfocus = () => { lastFocusedCard = card; };
+            card.onkeydown = (e) => handleKey(e, ch);
             grid.appendChild(card);
         });
     }
 
-    function renderRecentGrid() {
-        const recentGrid = document.getElementById('recent-grid');
+    function renderRecentPills() {
+        const container = document.getElementById('recent-container');
         const section = document.getElementById('recent-section');
         if (recents.length === 0) { section.style.display = 'none'; return; }
         section.style.display = 'block';
-        recentGrid.innerHTML = '';
+        container.innerHTML = '';
         recents.forEach(url => {
             const ch = allChannels.find(c => c.url === url);
-            if (ch) recentGrid.appendChild(createCard(ch));
+            if (ch) {
+                const pill = document.createElement('div');
+                pill.className = 'recent-pill';
+                pill.tabIndex = 0;
+                pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name}</span>`;
+                pill.onkeydown = (e) => { if(e.key === 'Enter' || e.key === 'OK') playChannel(ch); };
+                container.appendChild(pill);
+            }
         });
     }
 
-    function createCard(ch) {
-        const isFav = favorites.includes(ch.url);
-        const card = document.createElement('div');
-        card.className = `card ${isFav ? 'is-favorite' : ''}`;
-        card.tabIndex = 0;
-        card.innerHTML = `<div class="ch-index">${allChannels.findIndex(i => i.url === ch.url) + 1}</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
-        
-        card.onfocus = () => { lastFocusedCard = card; };
-        card.onkeydown = (e) => {
-            if (e.key === 'Enter' || e.key === 'OK') {
-                const now = Date.now();
-                if (now - lastClickTime < 300) toggleFullscreen();
-                else playChannel(ch);
-                lastClickTime = now;
-                e.preventDefault();
-            }
-        };
-        return card;
+    function handleKey(e, ch) {
+        if (e.key === 'Enter' || e.key === 'OK') {
+            const now = Date.now();
+            if (now - lastClickTime < 300) toggleFullscreen();
+            else playChannel(ch);
+            lastClickTime = now;
+            e.preventDefault();
+        }
     }
 
     function playChannel(ch) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
-        // রিসেন্ট লিস্ট আপডেট
-        recents = [ch.url, ...recents.filter(u => u !== ch.url)].slice(0, 6);
+        recents = [ch.url, ...recents.filter(u => u !== ch.url)].slice(0, 8);
         localStorage.setItem('tv_recents', JSON.stringify(recents));
-        renderRecentGrid();
+        renderRecentPills();
     }
 
     function toggleFullscreen() {
         if (!player.isFullscreen()) player.requestFullscreen();
         else player.exitFullscreen();
+        setTimeout(() => { if(lastFocusedCard) lastFocusedCard.focus(); }, 500);
     }
 
-    // নম্বর কী ও সোর্স বাটন হ্যান্ডলিং
+    // গ্লোবাল ইভেন্ট
     window.addEventListener('keydown', (e) => {
-        // নম্বর শর্টকাট
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -182,14 +205,13 @@
             }, 1500);
         }
 
-        // সোর্স বাটন (লং প্রেস)
         if (e.key === 'Source' || e.keyCode === 424 || e.keyCode === 18) {
             if (!sourceTimer) {
                 sourceTimer = setTimeout(() => {
                     const active = document.activeElement;
                     if (active && active.classList.contains('card')) {
-                        const chName = active.querySelector('.name').innerText;
-                        const ch = allChannels.find(c => c.name === chName);
+                        const name = active.querySelector('.name').innerText;
+                        const ch = allChannels.find(c => c.name === name);
                         if (ch) showFavModal(ch);
                     }
                 }, 1200);
@@ -203,18 +225,13 @@
         }
     });
 
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 'Source' || e.keyCode === 424 || e.keyCode === 18) {
-            clearTimeout(sourceTimer); sourceTimer = null;
-        }
-    });
+    window.addEventListener('keyup', (e) => { if (e.key === 'Source' || e.keyCode === 424 || e.keyCode === 18) { clearTimeout(sourceTimer); sourceTimer = null; } });
 
-    // মোডাল লজিক (রাইট হ্যাঁ, লেফট না)
+    // মোডাল নেভিগেশন (ডানে হ্যাঁ, বামে না)
     document.getElementById('fav-modal').onkeydown = (e) => {
-        if (e.key === 'ArrowRight') document.getElementById('confirm-yes').focus();
-        else if (e.key === 'ArrowLeft') document.getElementById('confirm-no').focus();
-        else if (e.key === 'Enter' || e.key === 'OK') document.activeElement.click();
-        e.preventDefault();
+        if (e.key === 'ArrowRight') { document.getElementById('confirm-yes').focus(); e.preventDefault(); }
+        else if (e.key === 'ArrowLeft') { document.getElementById('confirm-no').focus(); e.preventDefault(); }
+        else if (e.key === 'Enter' || e.key === 'OK') { document.activeElement.click(); e.preventDefault(); }
     };
 
     function showFavModal(ch) {
@@ -241,6 +258,9 @@
                    (cat === 'Sports') ? allChannels.filter(c => c.group.toLowerCase().includes('sports') || c.name.toLowerCase().includes('sports')) : allChannels;
         renderGrid(list);
     }
+
+    const searchInput = document.getElementById('search');
+    searchInput.oninput = () => renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(searchInput.value.toLowerCase())));
 
     init();
 </script>
