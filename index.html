@@ -6,7 +6,7 @@
     <title>Pro TV - Final Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
 
         /* ভিডিও ও ঘড়ি */
@@ -14,7 +14,7 @@
         .video-js { width: 100% !important; height: 100% !important; }
         #tv-clock { position: absolute; top: 15px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; font-size: 18px; z-index: 10; font-family: monospace; }
 
-        /* OSD নম্বর */
+        /* OSD নম্বর (টাইপ করার সময়) */
         #osd-number {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(255, 0, 0, 0.9); color: white; font-size: 100px;
@@ -38,18 +38,32 @@
             background: var(--accent); border-color: white; outline: none; transform: scale(1.1); box-shadow: 0 0 20px rgba(255,0,0,0.6);
         }
 
-        /* চ্যানেল সিরিয়াল নাম্বার */
+        /* বড় চ্যানেল সিরিয়াল নাম্বার (উপরের বামে) */
         .ch-index {
-            position: absolute; top: 5px; left: 5px; background: rgba(255, 0, 0, 0.85);
-            color: white; font-size: 12px; font-weight: bold; padding: 2px 8px;
-            border-radius: 5px; z-index: 5;
+            position: absolute; top: 0; left: 0; 
+            background: #0044cc; /* গাঢ় নীল কালার */
+            color: white; font-size: 18px; /* বড় সাইজ */
+            font-weight: bold; padding: 4px 12px;
+            border-bottom-right-radius: 12px;
+            border-top-left-radius: 10px;
+            z-index: 10;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
         }
 
-        .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 8px; overflow: hidden; position: relative; }
+        /* ফেভারেট স্টার (উপরের ডানে) */
+        .fav-star { 
+            position: absolute; top: 8px; right: 8px; 
+            font-size: 22px; color: rgba(255,255,255,0.1); 
+            z-index: 10; transition: 0.3s;
+        }
+        .is-favorite .fav-star { 
+            color: var(--fav-color) !important; 
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+        }
+
+        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 8px; overflow: hidden; position: relative; }
         .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-        .name { padding: 8px; font-size: 14px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fav-star { position: absolute; top: 8px; right: 8px; color: rgba(255,255,255,0.2); font-size: 18px; }
-        .is-favorite .fav-star { color: #ffcc00; }
+        .name { padding: 8px; font-size: 15px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* মোডাল */
         #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
@@ -94,33 +108,34 @@
     let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
     let numBuffer = "", numTimeout = null, currentCategory = 'All';
 
-    // ঘড়ি
+    // ঘড়ি আপডেট
     setInterval(() => { document.getElementById('tv-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 
-    // ডেটা লোড
+    // ডেটা লোড করা
     async function init() {
-        const res = await fetch(m3uUrl);
-        const data = await res.text();
-        const lines = data.split('\n');
-        let name = "", logo = "", group = "";
-        lines.forEach(line => {
-            if (line.includes('#EXTINF:')) {
-                name = line.split(',').pop().trim();
-                logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
-                group = (line.match(/group-title="([^"]+)"/) || [])[1] || "General";
-            } else if (line.startsWith('http')) {
-                allChannels.push({ name, url: line.trim(), logo, group });
-            }
-        });
-        renderGrid(allChannels);
+        try {
+            const res = await fetch(m3uUrl);
+            const data = await res.text();
+            const lines = data.split('\n');
+            let name = "", logo = "", group = "";
+            lines.forEach(line => {
+                if (line.includes('#EXTINF:')) {
+                    name = line.split(',').pop().trim();
+                    logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
+                    group = (line.match(/group-title="([^"]+)"/) || [])[1] || "General";
+                } else if (line.startsWith('http')) {
+                    allChannels.push({ name, url: line.trim(), logo, group });
+                }
+            });
+            renderGrid(allChannels);
+        } catch(e) { console.error("Data fetch failed"); }
     }
 
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch, idx) => {
+        list.forEach((ch) => {
             const isFav = favorites.includes(ch.url);
-            // অরিজিনাল লিস্ট থেকে ইন্ডেক্স বের করা যাতে নাম্বার সঠিক থাকে
             const realIndex = allChannels.findIndex(item => item.url === ch.url) + 1;
             
             const card = document.createElement('div');
@@ -136,7 +151,9 @@
             let pressTimer;
             card.onkeydown = (e) => {
                 if (e.key === 'Enter' || e.key === 'OK') {
-                    pressTimer = setTimeout(() => { showFavModal(ch); pressTimer = null; }, 800);
+                    if(!pressTimer) {
+                        pressTimer = setTimeout(() => { showFavModal(ch); pressTimer = null; }, 800);
+                    }
                 }
             };
             card.onkeyup = () => {
@@ -146,18 +163,14 @@
         });
     }
 
-    // সার্চ বক্স কন্ট্রোল
+    // সার্চ কন্ট্রোল
     const searchInput = document.getElementById('search');
-    searchInput.onkeydown = (e) => {
-        if (e.key === 'Enter' || e.key === 'OK') {
-            searchInput.readOnly = false; // এন্টার চাপলে কিবোর্ড আসবে
-        }
-    };
+    searchInput.onkeydown = (e) => { if (e.key === 'Enter' || e.key === 'OK') searchInput.readOnly = false; };
     searchInput.oninput = () => {
         const query = searchInput.value.toLowerCase();
         renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(query)));
     };
-    searchInput.onblur = () => { searchInput.readOnly = true; }; // ফোকাস সরালে কিবোর্ড লক
+    searchInput.onblur = () => { searchInput.readOnly = true; };
 
     function playChannel(url) {
         player.src({ src: url, type: 'application/x-mpegURL' });
@@ -165,7 +178,7 @@
         setTimeout(() => document.getElementById('tv-player').focus(), 500);
     }
 
-    // রিমোট কী ও OSD
+    // নম্বর টাইপিং ও OSD
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
@@ -177,7 +190,12 @@
                 const idx = parseInt(numBuffer) - 1;
                 if (allChannels[idx]) {
                     playChannel(allChannels[idx].url);
-                    renderGrid(allChannels); // সিলেকশন দেখতে গ্রিড আপডেট
+                    // ক্যাটাগরি 'All' এ ফিরিয়ে আনা যাতে সব চ্যানেল দেখা যায়
+                    if(currentCategory !== 'All') filterCategory('All');
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('.card');
+                        if(cards[idx]) { cards[idx].focus(); cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                    }, 500);
                 }
                 numBuffer = ""; osd.style.display = 'none';
             }, 1500);
