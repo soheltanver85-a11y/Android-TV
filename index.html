@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Final Premium UI</title>
+    <title>Zeno TV - Ultimate Remote UI</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
 
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
+        /* প্লেয়ার কন্ট্রোলস ফোকাস স্টাইল */
+        .vjs-control:focus { background: var(--accent) !important; outline: 3px solid white !important; }
 
         /* ইউআই লেআউট */
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
@@ -24,43 +25,28 @@
             position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222; 
         }
         
-        .zeno-logo { 
-            font-weight: 900; font-size: 28px; letter-spacing: 1px;
-            background: linear-gradient(90deg, #fff, #ff0000, #fff);
-            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            animation: shine 3s linear infinite; margin-right: 15px; font-style: italic;
-        }
-        @keyframes shine { to { background-position: 200% center; } }
+        .zeno-logo { font-weight: 900; font-size: 28px; color: #ff0000; font-style: italic; margin-right: 15px; }
 
-        .tab, .apk-btn, .recent-pill, .search-btn { 
+        .tab, .search-btn, .apk-btn { 
             padding: 8px 15px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
             background: #222; color: #eee; font-size: 13px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;
         }
 
-        #search-overlay { 
-            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 65px; 
-            background: #050505; z-index: 200; align-items: center; padding: 0 20px; 
-        }
-        #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 2px solid var(--accent); color: white; border-radius: 8px; outline: none; }
-
-        .tab:focus, .apk-btn:focus, .recent-pill:focus, .card:focus, .search-btn:focus, #search-input:focus { 
-            background: var(--accent); border-color: #fff; transform: scale(1.05); color: white;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        /* ফোকাস স্টাইল */
+        .tab:focus, .search-btn:focus, .apk-btn:focus, .card:focus, .recent-pill:focus { 
+            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
         }
 
-        /* ছোট সাইজের চ্যানেল গ্রিড */
         #main-content { padding: 20px 15px 80px 15px; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 15px; }
         
         .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 12px; padding: 2px 6px; border-bottom-right-radius: 10px; z-index: 5; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 11px; padding: 2px 6px; border-bottom-right-radius: 10px; }
         .logo-box { height: 80px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
-        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
-        .name { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
+        .name { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; }
 
-        .apk-btn { background: #007bff; }
-        .recent-pill img { width: 22px; height: 22px; border-radius: 4px; object-fit: contain; }
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -68,23 +54,16 @@
 <div id="osd-number"></div>
 
 <div id="player-wrapper">
-    <video id="tv-player" class="video-js vjs-big-play-centered" controls preload="auto" tabindex="-1"></video>
+    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
 </div>
 
 <div id="ui-overlay">
-    <div id="search-overlay">
-        <input type="text" id="search-input" placeholder="সার্চ করুন..." oninput="searchChannels(this.value)">
-        <button class="tab" onclick="toggleSearch(false)" style="margin-left:10px;">X</button>
-    </div>
-
     <div class="tabs-container">
         <div class="zeno-logo">ZENO TV</div>
-        <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍 সার্চ</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভ</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
-        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
-        <div id="recent-box" style="display:flex; gap:8px;"></div>
+        <div class="search-btn nav-item" tabindex="0">🔍 সার্চ</div>
+        <div class="tab nav-item" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
+        <div class="tab nav-item" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
+        <div class="apk-btn nav-item" tabindex="0">📥 APK</div>
     </div>
 
     <div id="main-content">
@@ -97,9 +76,7 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
-    let allChannels = [], currentPlayingUrl = "";
-    let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
-    let recents = JSON.parse(localStorage.getItem('zeno_recents_final')) || [];
+    let allChannels = [];
     let numBuffer = "", numTimeout = null;
 
     async function init() {
@@ -118,28 +95,22 @@
                 }
             });
             renderGrid(allChannels);
-            renderRecentPills();
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error("Error loading M3U", e); }
     }
 
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach(ch => {
+        list.forEach((ch, index) => {
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = 'card nav-item';
             card.tabIndex = 0;
-            card.setAttribute('data-url', ch.url);
-            const idx = allChannels.findIndex(i => i.url === ch.url) + 1;
-            card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div><div class="name">${ch.name}</div>`;
-            
+            card.innerHTML = `
+                <div class="ch-index">${index + 1}</div>
+                <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
+                <div class="name">${ch.name}</div>
+            `;
             card.onclick = () => playChannel(ch);
-            card.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    if (currentPlayingUrl === ch.url) player.requestFullscreen();
-                    else playChannel(ch);
-                }
-            };
             grid.appendChild(card);
         });
     }
@@ -147,72 +118,13 @@
     function playChannel(ch) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
-        currentPlayingUrl = ch.url;
-        
-        // রিসেন্ট লিস্ট আপডেট
-        recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 5);
-        localStorage.setItem('zeno_recents_final', JSON.stringify(recents));
-        renderRecentPills();
     }
 
-    function renderRecentPills() {
-        const box = document.getElementById('recent-box');
-        box.innerHTML = '';
-        recents.forEach(ch => {
-            const pill = document.createElement('div');
-            pill.className = 'recent-pill';
-            pill.tabIndex = 0;
-            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
-            pill.onclick = () => playChannel(ch);
-            pill.onkeydown = (e) => { if(e.key === 'Enter') playChannel(ch); };
-            box.appendChild(pill);
-        });
-    }
-
-    function toggleSearch(show) {
-        const overlay = document.getElementById('search-overlay');
-        overlay.style.display = show ? 'flex' : 'none';
-        if(show) document.getElementById('search-input').focus();
-    }
-
-    function searchChannels(q) {
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
-        renderGrid(filtered);
-    }
-
-    function filterCategory(cat) {
-        let list = allChannels;
-        if (cat === 'Favorite') list = allChannels.filter(c => favorites.includes(c.url));
-        else if (cat === 'Sports') list = allChannels.filter(c => c.group.toLowerCase().includes('sport'));
-        renderGrid(list);
-    }
-
-    // গুরুত্বপূর্ণ: ফুলস্ক্রিন থেকে ব্যাক আসলে ওই চ্যানেলে ফোকাস রাখা
-    function syncFocusToCurrentChannel() {
-        if (currentPlayingUrl) {
-            const target = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
-            if (target) {
-                target.focus();
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    }
-
+    // --- রিমোট নেভিগেশন লজিক ---
     window.addEventListener('keydown', (e) => {
-        // রিমোটের ব্যাক বাটন বা এস্কেপ হ্যান্ডলিং
-        if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 10009 || e.keyCode === 461) {
-            if (document.getElementById('search-overlay').style.display === 'flex') {
-                toggleSearch(false);
-                e.preventDefault();
-            } else if (player.isFullscreen()) {
-                player.exitFullscreen();
-                e.preventDefault();
-                // ফুলস্ক্রিন থেকে বের হওয়ার সামান্য পর ফোকাস সেট করা
-                setTimeout(syncFocusToCurrentChannel, 250);
-            }
-        }
+        const active = document.activeElement;
         
-        // নম্বর কী প্যাড
+        // ১. নম্বর কী প্যাড
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -224,14 +136,61 @@
                 numBuffer = ""; osd.style.display = 'none';
             }, 1500);
         }
-    });
 
-    // প্লেয়ার ফুলস্ক্রিন থেকে বের হলে অটো ফোকাস কল করা
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen()) {
-            setTimeout(syncFocusToCurrentChannel, 100);
+        // ২. স্পেশাল নেভিগেশন (Up/Down/Left/Right)
+        switch(e.key) {
+            case 'ArrowUp':
+                if (active.classList.contains('card')) {
+                    // গ্রিড থেকে ক্যাটাগরিতে যাওয়া
+                    document.querySelector('.tab').focus();
+                } else if (active.classList.contains('nav-item')) {
+                    // ক্যাটাগরি থেকে প্লেয়ার কন্ট্রোলে যাওয়া
+                    player.controlBar.playToggle.focus();
+                }
+                break;
+            
+            case 'ArrowDown':
+                if (active.closest('.vjs-control-bar')) {
+                    document.querySelector('.tab').focus();
+                } else if (active.classList.contains('nav-item') && !active.classList.contains('card')) {
+                    document.querySelector('.card').focus();
+                }
+                break;
+
+            case 'ArrowRight':
+                // প্লেয়ারের ভেতর ডানে মুভ করা (Play -> Volume -> Fullscreen)
+                if (active.classList.contains('vjs-play-control')) {
+                    player.controlBar.volumePanel.focus();
+                    e.preventDefault();
+                } else if (active.classList.contains('vjs-volume-panel')) {
+                    player.controlBar.fullscreenToggle.focus();
+                    e.preventDefault();
+                }
+                break;
+
+            case 'ArrowLeft':
+                if (active.classList.contains('vjs-fullscreen-control')) {
+                    player.controlBar.volumePanel.focus();
+                    e.preventDefault();
+                } else if (active.classList.contains('vjs-volume-panel')) {
+                    player.controlBar.playToggle.focus();
+                    e.preventDefault();
+                }
+                break;
+
+            case 'Enter':
+                if (active.classList.contains('card')) {
+                    // চ্যানেল প্লে করার পর অটো ফুলস্ক্রিন হতে চাইলে নিচের লাইনটি আনকমেন্ট করুন
+                    // player.requestFullscreen();
+                }
+                break;
         }
     });
+
+    function filterCategory(cat) {
+        let list = (cat === 'Sports') ? allChannels.filter(c => c.group.toLowerCase().includes('sport')) : allChannels;
+        renderGrid(list);
+    }
 
     init();
 </script>
