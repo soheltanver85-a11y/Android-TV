@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro TV - Smart TV Optimized</title>
+    <title>Pro TV - Favorite Feature</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
@@ -13,42 +13,36 @@
         #player-wrapper { height: 50vh; background: #000; transition: height 0.5s; position: relative; }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* ফুলস্ক্রিন মোড স্টাইল */
-        body.vjs-full-window #player-wrapper { height: 100vh; }
+        /* ক্যাটাগরি ও সার্চ */
+        .tabs-container { display: flex; align-items: center; gap: 10px; padding: 10px 40px; background: #111; }
+        .tab { padding: 8px 20px; background: #222; border-radius: 20px; cursor: pointer; border: 2px solid transparent; }
+        .tab.active, .tab:focus { background: var(--accent); border-color: white; outline: none; }
 
-        /* ক্যাটাগরি ও সার্চ বার */
-        .tabs-container {
-            display: flex; align-items: center; gap: 10px; padding: 10px 40px; 
-            background: #111; overflow-x: auto; scrollbar-width: none;
-        }
-        .tab {
-            padding: 8px 20px; background: #222; border-radius: 20px;
-            cursor: pointer; white-space: nowrap; transition: 0.3s; border: 2px solid transparent; font-size: 14px;
-        }
-        .tab:focus, .tab.active { background: var(--accent); border-color: white; outline: none; }
-
-        .search-box {
-            margin-left: auto; display: flex; align-items: center; background: #222;
-            border-radius: 20px; padding: 5px 15px; border: 1px solid #444;
-        }
-        .search-box input {
-            background: transparent; border: none; color: white; outline: none; padding: 5px; font-size: 14px;
-        }
-
-        /* কন্টেন্ট এরিয়া */
+        /* গ্রিড ও কার্ড */
         #main-content { height: 50vh; overflow-y: auto; padding: 10px 40px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
-
         .card { background: var(--card); border-radius: 12px; position: relative; transition: 0.3s; cursor: pointer; border: 3px solid transparent; }
         .card:focus { transform: scale(1.1); border-color: var(--accent); outline: none; }
-
         .logo-box { height: 80px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 8px; overflow: hidden; }
         .logo-box img { width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.5s; }
         .logo-box img.loaded { opacity: 1; }
-        
-        .name { padding: 5px; font-size: 12px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fav-star { position: absolute; top: 5px; right: 5px; color: #ffcc00; display: none; }
-        .is-favorite .fav-star { display: block; }
+        .name { padding: 5px; font-size: 12px; font-weight: bold; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* ফেভারেট স্টার স্টাইল */
+        .fav-star { position: absolute; top: 5px; right: 5px; color: #555; font-size: 18px; transition: 0.3s; }
+        .is-favorite .fav-star { color: #ffcc00; text-shadow: 0 0 10px #ffcc00; }
+
+        /* ফেভারেট পপআপ/ডায়ালগ */
+        #fav-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;
+        }
+        .modal-content { background: #222; padding: 30px; border-radius: 15px; text-align: center; border: 2px solid var(--accent); }
+        .modal-btns { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+        .m-btn { padding: 10px 30px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; font-size: 16px; }
+        .btn-yes { background: var(--accent); color: white; }
+        .btn-no { background: #444; color: white; }
+        .m-btn:focus { outline: 3px solid white; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -62,15 +56,21 @@
     <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">ফেভারেট</div>
     <div class="tab" tabindex="0" onclick="filterCategory('Sports')">Sports</div>
     <div class="tab" tabindex="0" onclick="filterCategory('Bangla')">বাংলা</div>
-    <div class="tab" tabindex="0" onclick="filterCategory('Hindi')">Hindi</div>
-    
-    <div class="search-box">
-        <input type="text" id="search" placeholder="খুঁজুন..." oninput="searchChannel()">
-    </div>
+    <div class="search-box" style="margin-left:auto;"><input type="text" id="search" placeholder="খুঁজুন..." oninput="searchChannel()" style="background:#222; color:white; border:none; padding:8px; border-radius:15px;"></div>
 </div>
 
 <div id="main-content">
     <div id="channel-grid" class="grid"></div>
+</div>
+
+<div id="fav-modal">
+    <div class="modal-content">
+        <h3 id="modal-text">ফেভারেট লিস্টে যোগ করবেন?</h3>
+        <div class="modal-btns">
+            <button id="confirm-yes" class="m-btn btn-yes" tabindex="0">Yes</button>
+            <button id="confirm-no" class="m-btn btn-no" tabindex="0">No</button>
+        </div>
+    </div>
 </div>
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
@@ -81,19 +81,12 @@
     let allChannels = [];
     let favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
     let pressTimer;
-    const LONG_PRESS_MS = 1000; // ১ সেকেন্ড চেপে ধরে রাখতে হবে
-
-    // অটো-রিকানেক্ট লজিক
-    player.on('error', () => {
-        setTimeout(() => { player.src(player.src()); player.play(); }, 3000);
-    });
+    let selectedChannelForFav = null;
 
     async function init() {
-        try {
-            const res = await fetch(m3uUrl);
-            const data = await res.text();
-            parseM3U(data);
-        } catch (e) { console.error("Data load failed", e); }
+        const res = await fetch(m3uUrl);
+        const data = await res.text();
+        parseM3U(data);
     }
 
     function parseM3U(data) {
@@ -115,12 +108,32 @@
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
         list.forEach((ch) => {
+            const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
-            card.className = `card ${favorites.includes(ch.url) ? 'is-favorite' : ''}`;
+            card.className = `card ${isFav ? 'is-favorite' : ''}`;
             card.tabIndex = 0;
-            card.innerHTML = `<div class="fav-star">★</div><div class="logo-box">${ch.logo ? `<img data-src="${ch.logo}">` : `<span>${ch.name.charAt(0)}</span>`}</div><div class="name">${ch.name}</div>`;
+            card.innerHTML = `
+                <div class="fav-star">★</div>
+                <div class="logo-box">${ch.logo ? `<img data-src="${ch.logo}">` : `<span>${ch.name.charAt(0)}</span>`}</div>
+                <div class="name">${ch.name}</div>
+            `;
             
+            // নরমাল ক্লিক (Play)
             card.onclick = () => playChannel(ch.url);
+
+            // লং প্রেস হ্যান্ডলিং (OK/Enter Button)
+            card.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === 'OK') {
+                    if (!pressTimer) {
+                        pressTimer = setTimeout(() => {
+                            showFavModal(ch);
+                            pressTimer = null;
+                        }, 1000); // ১ সেকেন্ড চেপে ধরলে
+                    }
+                }
+            };
+            card.onkeyup = () => { clearTimeout(pressTimer); pressTimer = null; };
+
             grid.appendChild(card);
         });
         lazyLoad();
@@ -131,58 +144,71 @@
         player.play();
     }
 
-    // ফুলস্ক্রিন টগল ফাংশন
-    function toggleFullScreen() {
-        if (!player.isFullscreen()) {
-            player.requestFullscreen();
-        } else {
-            player.exitFullscreen();
-        }
+    // ফেভারেট মোডাল লজিক
+    function showFavModal(ch) {
+        selectedChannelForFav = ch;
+        const isAlreadyFav = favorites.includes(ch.url);
+        document.getElementById('modal-text').innerText = isAlreadyFav ? "ফেভারেট থেকে বাদ দিবেন?" : "ফেভারেট লিস্টে যোগ করবেন?";
+        document.getElementById('fav-modal').style.display = 'flex';
+        document.getElementById('confirm-yes').focus();
     }
 
-    // --- রিমোট বাটন হ্যান্ডলিং (Long Press & Back Button) ---
+    document.getElementById('confirm-yes').onclick = () => {
+        const url = selectedChannelForFav.url;
+        if (favorites.includes(url)) {
+            favorites = favorites.filter(f => f !== url);
+        } else {
+            favorites.push(url);
+        }
+        localStorage.setItem('tv_favs', JSON.stringify(favorites));
+        closeModal();
+        renderGrid(currentCategory === 'Favorite' ? allChannels.filter(c => favorites.includes(c.url)) : allChannels);
+    };
+
+    document.getElementById('confirm-no').onclick = closeModal;
+
+    function closeModal() {
+        document.getElementById('fav-modal').style.display = 'none';
+        selectedChannelForFav = null;
+    }
+
+    // রিমোট কন্ট্রোল: Up (Long Press) & Back Button
     document.addEventListener('keydown', (e) => {
-        // রিমোটের 'Up' বাটন চেপে ধরলে ফুলস্ক্রিন টগল হবে
         if (e.key === 'ArrowUp') {
             if (!pressTimer) {
                 pressTimer = setTimeout(() => {
-                    toggleFullScreen();
-                    pressTimer = null; 
-                }, LONG_PRESS_MS);
+                    if (!player.isFullscreen()) player.requestFullscreen();
+                    else player.exitFullscreen();
+                    pressTimer = null;
+                }, 1000);
             }
         }
-
-        // রিমোটের 'Back' বা 'Backspace' চাপলে ফুলস্ক্রিন থেকে বের হবে
-        if (e.key === 'Backspace' || e.key === 'Escape' || e.key === 'BrowserBack') {
-            if (player.isFullscreen()) {
-                e.preventDefault(); 
+        if (e.key === 'Backspace' || e.key === 'Escape') {
+            if (document.getElementById('fav-modal').style.display === 'flex') {
+                closeModal();
+            } else if (player.isFullscreen()) {
+                e.preventDefault();
                 player.exitFullscreen();
             }
         }
     });
 
     document.addEventListener('keyup', (e) => {
-        if (e.key === 'ArrowUp') {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-        }
+        if (e.key === 'ArrowUp') { clearTimeout(pressTimer); pressTimer = null; }
     });
-    // -----------------------------------------------------
 
-    function searchChannel() {
-        const query = document.getElementById('search').value.toLowerCase();
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(query));
+    let currentCategory = 'All';
+    function filterCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if(event) event.target.classList.add('active');
+        const filtered = cat === 'All' ? allChannels : (cat === 'Favorite' ? allChannels.filter(c => favorites.includes(c.url)) : allChannels.filter(c => c.group.includes(cat)));
         renderGrid(filtered);
     }
 
-    function filterCategory(cat) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if(event) event.target.classList.add('active');
-        
-        const filtered = cat === 'All' ? allChannels : 
-                        (cat === 'Favorite' ? allChannels.filter(c => favorites.includes(c.url)) : 
-                        allChannels.filter(c => c.group.includes(cat) || c.name.includes(cat)));
-        renderGrid(filtered);
+    function searchChannel() {
+        const query = document.getElementById('search').value.toLowerCase();
+        renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(query)));
     }
 
     function lazyLoad() {
