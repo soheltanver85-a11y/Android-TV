@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Premium TV UI</title>
+    <title>Zeno TV - Premium UI</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
+        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
 
@@ -19,40 +19,60 @@
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); position: relative; }
         
         .tabs-container { 
-            display: flex; align-items: center; gap: 10px; 
-            padding: 15px 20px; background: rgba(5, 5, 5, 0.95); 
-            position: sticky; top: 0; z-index: 150; border-bottom: 1px solid #222; 
+            display: flex; align-items: center; gap: 12px; 
+            padding: 20px; background: rgba(5, 5, 5, 0.98); 
+            position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
         }
         
-        .zeno-logo { font-weight: 900; font-size: 24px; color: #ff0000; margin-right: 15px; font-style: italic; }
+        /* উজ্জ্বল ও প্রিমিয়াম লোগো ডিজাইন */
+        .zeno-logo { 
+            font-weight: 900; font-size: 32px; letter-spacing: 2px;
+            background: linear-gradient(90deg, #fff, #ff0000, #fff);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            margin-right: 25px; font-style: italic;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+        }
 
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* বাটন স্টাইল */
         .tab, .apk-btn, .recent-pill, .search-btn { 
-            padding: 10px 18px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-size: 14px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0;
+            padding: 12px 22px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; 
+            background: #222; color: #eee; font-size: 15px; font-weight: bold; outline: none;
+            display: flex; align-items: center; gap: 10px; white-space: nowrap; flex-shrink: 0;
+            transition: 0.3s;
         }
 
-        /* সার্চ বক্স (লুকানো) */
+        .search-btn { background: #333; border: 1px solid #444; }
+
+        /* সার্চ ইনপুট ফিল্ড */
         #search-overlay { 
-            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 58px; 
-            background: #050505; z-index: 200; align-items: center; padding: 0 20px; 
+            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 80px; 
+            background: #050505; z-index: 200; align-items: center; padding: 0 25px; 
         }
-        #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid var(--accent); color: white; border-radius: 5px; outline: none; }
+        #search-input { flex: 1; padding: 15px; background: #1a1a1a; border: 2px solid var(--accent); color: white; border-radius: 10px; font-size: 18px; outline: none; }
 
         .tab:focus, .apk-btn:focus, .recent-pill:focus, .card:focus, .search-btn:focus, #search-input:focus { 
-            background: var(--accent); border-color: #fff; transform: scale(1.05); color: white;
+            background: var(--accent); border-color: #fff; transform: scale(1.08); color: white;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
         }
 
-        .recent-pill img { width: 22px; height: 22px; border-radius: 4px; object-fit: contain; }
+        .recent-pill img { width: 28px; height: 28px; border-radius: 6px; object-fit: contain; background: #000; }
 
-        #main-content { padding: 25px 20px 80px 20px; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
+        /* মেইন কন্টেন্ট এডজাস্টমেন্ট */
+        #main-content { padding: 30px 20px 100px 20px; } 
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 30px; }
         
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 16px; font-weight: bold; padding: 4px 10px; border-bottom-right-radius: 15px; z-index: 5; }
-        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; }
-        .logo-box img { width: 85%; height: 85%; object-fit: contain; }
-        .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card { background: var(--card); border-radius: 18px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
+        .ch-index { position: absolute; top: 0; left: 0; background: linear-gradient(45deg, #0044cc, #0088ff); color: white; font-size: 16px; font-weight: bold; padding: 5px 12px; border-bottom-right-radius: 18px; z-index: 5; }
+        .logo-box { height: 110px; display: flex; align-items: center; justify-content: center; background: #111; margin: 8px; border-radius: 14px; }
+        .logo-box img { width: 80%; height: 80%; object-fit: contain; }
+        .name { padding: 15px; font-size: 16px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .apk-btn { background: #007bff; }
     </style>
 </head>
 <body>
@@ -65,8 +85,8 @@
 
 <div id="ui-overlay">
     <div id="search-overlay">
-        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
-        <button class="tab" onclick="toggleSearch(false)" style="margin-left:10px;">X</button>
+        <input type="text" id="search-input" placeholder="সার্চ করুন..." oninput="searchChannels(this.value)">
+        <button class="tab" onclick="toggleSearch(false)" style="margin-left:15px;">বন্ধ</button>
     </div>
 
     <div class="tabs-container">
@@ -74,8 +94,8 @@
         <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍 সার্চ</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
-        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK_HERE'">📥 APK</div>
-        <div id="recent-box" style="display:flex; gap:8px;"></div>
+        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_APK_URL'">📥 APK</div>
+        <div id="recent-box" style="display:flex; gap:10px; margin-left:10px;"></div>
     </div>
 
     <div id="main-content">
@@ -88,7 +108,7 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [], currentPlayingUrl = "";
-    let recents = JSON.parse(localStorage.getItem('zeno_recents_v2')) || [];
+    let recents = JSON.parse(localStorage.getItem('zeno_recent_list')) || [];
     let numBuffer = "", numTimeout = null;
 
     async function init() {
@@ -120,7 +140,7 @@
             card.tabIndex = 0;
             card.setAttribute('data-url', ch.url);
             const idx = allChannels.findIndex(i => i.url === ch.url) + 1;
-            card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
+            card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div><div class="name">${ch.name}</div>`;
             
             card.onclick = () => playChannel(ch);
             card.onkeydown = (e) => {
@@ -138,9 +158,9 @@
         player.play();
         currentPlayingUrl = ch.url;
 
-        // ৫টি রিসেন্ট আপডেট
+        // ৫টি রিসেন্ট চ্যানেল লজিক
         recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 5);
-        localStorage.setItem('zeno_recents_v2', JSON.stringify(recents));
+        localStorage.setItem('zeno_recent_list', JSON.stringify(recents));
         renderRecentPills();
     }
 
@@ -151,7 +171,7 @@
             const pill = document.createElement('div');
             pill.className = 'recent-pill';
             pill.tabIndex = 0;
-            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
+            pill.innerHTML = `<img src="${ch.logo}" onerror="this.style.display='none'"> <span>${ch.name.substring(0,8)}</span>`;
             pill.onclick = () => playChannel(ch);
             pill.onkeydown = (e) => { if(e.key === 'Enter') playChannel(ch); };
             box.appendChild(pill);
@@ -174,15 +194,7 @@
         renderGrid(list);
     }
 
-    // ব্যাক বাটন এবং ফোকাস লজিক
-    function returnFocus() {
-        const target = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
-        if (target) {
-            target.focus();
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
+    // ফুলস্ক্রিন ও ব্যাক বাটন হ্যান্ডলিং
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 10009) {
             if (document.getElementById('search-overlay').style.display === 'flex') {
@@ -190,7 +202,10 @@
                 e.preventDefault();
             } else if (player.isFullscreen()) {
                 player.exitFullscreen();
-                setTimeout(returnFocus, 200);
+                setTimeout(() => {
+                    const target = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
+                    if (target) target.focus();
+                }, 300);
                 e.preventDefault();
             }
         }
