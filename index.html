@@ -3,78 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Large Index Edition</title>
+    <title>Zeno TV - Premium UI</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন ৫০% */
+        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
 
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
         
-        /* এক লাইনের ট্যাব বার */
+        /* প্রিমিয়াম ট্যাব বার */
         .tabs-container { 
-            display: flex; align-items: center; gap: 8px; 
-            padding: 10px 15px; background: #111; position: sticky; top: 0; z-index: 50;
-            border-bottom: 1px solid #222; flex-wrap: nowrap; overflow-x: auto;
+            display: flex; align-items: center; gap: 10px; 
+            padding: 12px 20px; background: linear-gradient(to right, #111, #000); 
+            position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #222; 
+            flex-wrap: nowrap; overflow-x: auto;
         }
         
-        .zeno-logo { font-weight: bold; font-size: 18px; color: #fff; text-shadow: 0 0-10px #ff0000; animation: glow 1.5s infinite alternate; margin-right: 8px; flex-shrink: 0; }
-        @keyframes glow { from { text-shadow: 0 0 5px #ff0000; } to { text-shadow: 0 0 20px #ff0000; transform: scale(1.05); } }
+        /* ইউনিক ZENO TV লোগো */
+        .zeno-logo { 
+            font-weight: 900; font-size: 22px; letter-spacing: 1px;
+            background: linear-gradient(45deg, #fff 30%, #ff0000 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            animation: pulse-glow 2s infinite; margin-right: 15px; flex-shrink: 0;
+            font-style: italic;
+        }
+        @keyframes pulse-glow { 0% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.03); } 100% { opacity: 0.8; } }
 
+        /* ক্যাটাগরি ট্যাব ডিজাইন উইথ আইকন */
         .tab, .apk-btn, .recent-pill { 
-            padding: 8px 14px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; 
+            padding: 8px 16px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
             outline: none; font-size: 13px; font-weight: bold; display: flex; align-items: center; 
-            gap: 6px; white-space: nowrap; flex-shrink: 0;
+            gap: 8px; white-space: nowrap; flex-shrink: 0; background: #222; color: #eee;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .tab { background: #222; color: #ccc; }
-        .tab:focus, .card:focus, .m-btn:focus, .apk-btn:focus, .recent-pill:focus, #search:focus { 
-            background: var(--accent); border-color: white; transform: scale(1.05); color: white;
+        .tab:focus, .card:focus, .apk-btn:focus, .recent-pill:focus, #search:focus { 
+            background: var(--accent); border-color: #fff; transform: scale(1.1); 
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4); color: white;
         }
 
-        .apk-btn { background: linear-gradient(45deg, #00c853, #b2ff59); color: #000; text-decoration: none; }
+        .apk-btn { background: linear-gradient(45deg, #00c853, #64dd17); color: #000; text-decoration: none; }
 
-        /* রিসেন্ট চ্যানেল (একই লাইনে) */
-        .recent-box { display: flex; align-items: center; gap: 8px; }
-        .recent-pill { background: #1a1a1a; border: 1px solid #444; }
-        .recent-pill img { width: 18px; height: 18px; object-fit: contain; }
+        /* রিসেন্ট চ্যানেল পিল */
+        .recent-box { display: flex; align-items: center; gap: 8px; margin: 0 5px; }
+        .recent-pill { background: #1a1a1a; border: 1px solid #333; padding: 5px 10px; }
+        .recent-pill img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; }
 
-        #search { margin-left: auto; background:#222; color:white; border:none; padding:8px 15px; border-radius:12px; outline: none; width: 100px; font-size: 12px; flex-shrink: 0; }
+        #search { margin-left: auto; background:#222; color:white; border:none; padding:10px 18px; border-radius:50px; outline: none; width: 120px; font-size: 13px; flex-shrink: 0; border: 1px solid #333; }
 
-        /* গ্রিড এবং বড় সংখ্যা (Channel Index) */
-        #main-content { padding: 15px 20px 100px 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 20px; }
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 4px solid transparent; position: relative; transition: 0.2s; }
+        /* চ্যানেল গ্রিড ও বড় ইন্ডেক্স */
+        #main-content { padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.3s; }
         
-        /* সংখ্যাগুলো বড় করা হয়েছে এখানে */
         .ch-index { 
             position: absolute; top: 0; left: 0; 
-            background: #0044cc; color: white; 
-            font-size: 22px; /* সাইজ বাড়ানো হয়েছে */
-            font-weight: 900; 
-            padding: 5px 12px; 
-            border-bottom-right-radius: 15px; 
-            border-top-left-radius: 8px;
-            z-index: 5;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            background: linear-gradient(45deg, #0044cc, #0088ff); 
+            color: white; font-size: 24px; font-weight: 900; 
+            padding: 6px 14px; border-bottom-right-radius: 18px; 
+            z-index: 5; box-shadow: 3px 3px 10px rgba(0,0,0,0.6);
         }
 
-        .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #222; margin: 4px; border-radius: 10px; overflow: hidden; }
-        .logo-box img { width: 100%; height: 100%; object-fit: contain; }
-        .name { padding: 8px; font-size: 14px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 12px; overflow: hidden; }
+        .logo-box img { width: 85%; height: 85%; object-fit: contain; }
+        .name { padding: 10px; font-size: 14px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* মোডাল */
-        #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: #1a1a1a; padding: 40px; border-radius: 20px; text-align: center; border: 4px solid var(--accent); }
+        #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: #1a1a1a; padding: 40px; border-radius: 25px; text-align: center; border: 3px solid var(--accent); box-shadow: 0 0 30px rgba(255,0,0,0.2); }
         .modal-btns { display: flex; justify-content: center; gap: 25px; margin-top: 30px; }
-        .m-btn { padding: 12px 45px; border-radius: 10px; border: 3px solid transparent; cursor: pointer; color: white; font-weight: bold; font-size: 22px; }
-        #confirm-no { background: #444; }
-        #confirm-yes { background: var(--accent); }
+        .m-btn { padding: 12px 50px; border-radius: 12px; border: none; cursor: pointer; color: white; font-weight: bold; font-size: 22px; }
     </style>
 </head>
 <body>
@@ -87,16 +91,25 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <div class="zeno-logo">ZENO</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">ফেভ</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Sports')">Sports</div>
+        <div class="zeno-logo">ZENO TV</div>
         
-        <a href="YOUR_APK_URL" class="apk-btn" tabindex="0">⬇ APK</a>
+        <div class="tab" tabindex="0" onclick="filterCategory('All')">
+            <span>📺</span> সব
+        </div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">
+            <span>⭐</span> ফেভ
+        </div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Sports')">
+            <span>⚽</span> স্পোর্টস
+        </div>
+        
+        <a href="APK_DOWNLOAD_LINK" class="apk-btn" tabindex="0">
+            <span>📥</span> APK
+        </a>
         
         <div id="recent-box" class="recent-box"></div>
 
-        <input type="text" id="search" placeholder="সার্চ..." readonly tabindex="0">
+        <input type="text" id="search" placeholder="🔍 খুঁজুন..." readonly tabindex="0">
     </div>
 
     <div id="main-content">
@@ -106,10 +119,10 @@
 
 <div id="fav-modal">
     <div class="modal-content">
-        <h2 id="modal-text" style="font-size: 24px;"></h2>
+        <h2 id="modal-text" style="font-size: 26px; margin-bottom: 10px;"></h2>
         <div class="modal-btns">
-            <button id="confirm-no" class="m-btn" tabindex="0">না</button>
-            <button id="confirm-yes" class="m-btn" tabindex="0">হ্যাঁ</button>
+            <button id="confirm-no" class="m-btn" tabindex="0" style="background:#444;">না</button>
+            <button id="confirm-yes" class="m-btn" tabindex="0" style="background:var(--accent);">হ্যাঁ</button>
         </div>
     </div>
 </div>
@@ -174,7 +187,7 @@
                 const pill = document.createElement('div');
                 pill.className = 'recent-pill';
                 pill.tabIndex = 0;
-                pill.innerHTML = `<img src="${ch.logo}"> ${ch.name.substring(0,6)}`;
+                pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
                 pill.onkeydown = (e) => { if(e.key === 'Enter' || e.key === 'OK') playChannel(ch); };
                 box.appendChild(pill);
             }
