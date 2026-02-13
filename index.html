@@ -6,59 +6,50 @@
     <title>Zeno TV - Premium UI</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        .video-js:focus { outline: none !important; }
 
         #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
 
-        /* ইউআই লেআউট - এখানে চ্যানেলগুলোকে নিচে নামানোর জন্য প্যাডিং বাড়ানো হয়েছে */
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
         
-        /* ট্যাব কন্টেইনার - এটি স্টিকি থাকবে */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
             padding: 15px 20px; background: rgba(5, 5, 5, 0.95); 
             position: sticky; top: 0; z-index: 150; border-bottom: 1px solid #222; 
-            flex-wrap: nowrap; overflow-x: auto;
+            overflow-x: auto;
         }
         
-        .zeno-logo { 
-            font-weight: 900; font-size: 24px; letter-spacing: 1px;
-            background: linear-gradient(45deg, #fff 30%, #ff0000 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-            margin-right: 20px; flex-shrink: 0; font-style: italic;
+        .zeno-logo { font-weight: 900; font-size: 24px; color: #ff0000; margin-right: 20px; flex-shrink: 0; font-style: italic; }
+
+        .tab, .apk-btn, .recent-pill, #search-input { 
+            padding: 10px 18px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
+            background: #222; color: #eee; font-size: 14px; font-weight: bold; outline: none;
+            display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0;
         }
 
-        .tab, .apk-btn, .recent-pill { 
-            padding: 10px 20px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
-            outline: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; 
-            gap: 8px; white-space: nowrap; flex-shrink: 0; background: #222; color: #eee;
+        #search-input { background: #111; border: 1px solid #444; width: 150px; border-radius: 10px; }
+
+        .tab:focus, .apk-btn:focus, .recent-pill:focus, .card:focus, #search-input:focus { 
+            background: var(--accent); border-color: #fff; transform: scale(1.05); outline: none;
         }
 
-        .tab:focus, .card:focus, .apk-btn:focus, .recent-pill:focus, #search:focus { 
-            background: var(--accent); border-color: #fff; transform: scale(1.05); 
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4); color: white; outline: none;
-        }
+        /* রিসেন্ট চ্যানেলের লোগো স্টাইল */
+        .recent-pill img { width: 22px; height: 22px; border-radius: 4px; object-fit: contain; background: #000; }
 
-        /* মেইন কন্টেন্ট - ট্যাব বার থেকে চ্যানেলগুলোকে নিচে নামানোর জন্য মার্জিন */
         #main-content { padding: 25px 20px 80px 20px; } 
-
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
         
-        .ch-index { position: absolute; top: 0; left: 0; background: linear-gradient(45deg, #0044cc, #0088ff); color: white; font-size: 18px; font-weight: bold; padding: 4px 12px; border-bottom-right-radius: 15px; z-index: 5; }
-        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; overflow: hidden; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 16px; font-weight: bold; padding: 4px 10px; border-bottom-right-radius: 15px; z-index: 5; }
+        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; }
         .logo-box img { width: 85%; height: 85%; object-fit: contain; }
         .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: #1a1a1a; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); }
+        .apk-btn { background: #1a73e8; } /* ডাউনলোড বাটন নীল রং */
     </style>
 </head>
 <body>
@@ -75,7 +66,12 @@
         <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভ</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
-        <div id="recent-box" class="recent-box" style="display:flex; gap:8px;"></div>
+        
+        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_APK_URL_HERE'">📥 APK</div>
+
+        <input type="text" id="search-input" placeholder="সার্চ..." oninput="searchChannels(this.value)" tabindex="0">
+
+        <div id="recent-box" style="display:flex; gap:8px;"></div>
     </div>
 
     <div id="main-content">
@@ -83,20 +79,15 @@
     </div>
 </div>
 
-<div id="fav-modal">
-    <div class="modal-content">
-        <h2 id="modal-text"></h2>
-        <button id="confirm-no" class="m-btn" style="background:#444; padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;">না</button>
-        <button id="confirm-yes" class="m-btn" style="background:var(--accent); padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;">হ্যাঁ</button>
-    </div>
-</div>
-
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
-    let recents = JSON.parse(localStorage.getItem('tv_recents')) || [];
+    
+    let allChannels = [];
+    let favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
+    // রিসেন্ট চ্যানেল ডাটা অবজেক্ট হিসেবে সেভ করা
+    let recents = JSON.parse(localStorage.getItem('tv_recents_data')) || [];
     let numBuffer = "", numTimeout = null, currentPlayingUrl = ""; 
 
     async function init() {
@@ -128,16 +119,13 @@
             card.tabIndex = 0;
             card.setAttribute('data-url', ch.url); 
             const idx = allChannels.findIndex(i => i.url === ch.url) + 1;
-            card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
+            card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div><div class="name">${ch.name}</div>`;
             
+            card.onclick = () => playChannel(ch);
             card.onkeydown = (e) => {
-                if (e.key === 'Enter' || e.key === 'OK' || e.keyCode === 13) {
-                    if (currentPlayingUrl === ch.url) {
-                        player.requestFullscreen();
-                    } else {
-                        playChannel(ch);
-                    }
-                    e.preventDefault();
+                if (e.key === 'Enter') {
+                    if (currentPlayingUrl === ch.url) player.requestFullscreen();
+                    else playChannel(ch);
                 }
             };
             grid.appendChild(card);
@@ -148,32 +136,49 @@
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
         currentPlayingUrl = ch.url;
-        recents = [ch.url, ...recents.filter(u => u !== ch.url)].slice(0, 5);
-        localStorage.setItem('tv_recents', JSON.stringify(recents));
+
+        // ৫টি রিসেন্ট চ্যানেল ম্যানেজমেন্ট
+        recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 5);
+        localStorage.setItem('tv_recents_data', JSON.stringify(recents));
         renderRecentPills();
     }
 
-    function returnFocusToCard() {
-        player.el().blur(); 
-        setTimeout(() => {
-            const targetCard = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
-            if (targetCard) {
-                targetCard.focus();
-                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 200);
+    function renderRecentPills() {
+        const box = document.getElementById('recent-box');
+        box.innerHTML = '';
+        recents.forEach(ch => {
+            const pill = document.createElement('div');
+            pill.className = 'recent-pill';
+            pill.tabIndex = 0;
+            pill.innerHTML = `<img src="${ch.logo}" onerror="this.style.display='none'"> <span>${ch.name.substring(0,6)}</span>`;
+            pill.onclick = () => playChannel(ch);
+            pill.onkeydown = (e) => { if(e.key === 'Enter') playChannel(ch); };
+            box.appendChild(pill);
+        });
     }
 
+    function searchChannels(query) {
+        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(query.toLowerCase()));
+        renderGrid(filtered);
+    }
+
+    function filterCategory(cat) {
+        let list = allChannels;
+        if (cat === 'Favorite') list = allChannels.filter(c => favorites.includes(c.url));
+        if (cat === 'Sports') list = allChannels.filter(c => c.group.toLowerCase().includes('sport'));
+        renderGrid(list);
+    }
+
+    // টিভি রিমোট ব্যাক বাটন ও নম্বর বাটন হ্যান্ডলিং
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 461 || e.keyCode === 10009) {
-            if (document.getElementById('fav-modal').style.display === 'flex') {
-                closeModal();
-                e.preventDefault();
-            } else if (player.isFullscreen()) {
+        if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 10009) {
+            if (player.isFullscreen()) {
                 player.exitFullscreen();
-                returnFocusToCard();
                 e.preventDefault();
-                e.stopPropagation();
+                setTimeout(() => {
+                    const target = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
+                    if (target) target.focus();
+                }, 300);
             }
         }
         if (e.key >= '0' && e.key <= '9') {
@@ -188,29 +193,6 @@
             }, 1500);
         }
     });
-
-    player.on('fullscreenchange', () => { if (!player.isFullscreen()) returnFocusToCard(); });
-
-    function renderRecentPills() {
-        const box = document.getElementById('recent-box');
-        box.innerHTML = '';
-        recents.slice(0, 3).forEach(url => {
-            const ch = allChannels.find(c => c.url === url);
-            if (ch) {
-                const pill = document.createElement('div');
-                pill.className = 'recent-pill';
-                pill.tabIndex = 0;
-                pill.innerHTML = `<span>${ch.name.substring(0,8)}</span>`;
-                pill.onclick = () => playChannel(ch);
-                box.appendChild(pill);
-            }
-        });
-    }
-
-    function filterCategory(cat) {
-        let list = (cat === 'Favorite') ? allChannels.filter(c => favorites.includes(c.url)) : allChannels;
-        renderGrid(list);
-    }
 
     init();
 </script>
