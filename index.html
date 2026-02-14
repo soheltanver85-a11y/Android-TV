@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Premium - Android TV</title>
+    <title>Zeno TV Premium - Android TV Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { 
@@ -11,10 +11,11 @@
             --bg: #050505; 
             --card: #1a1a1a; 
             --gold: #ffd700; 
+            --premium: linear-gradient(45deg, #FFD700, #FFA500);
             --blue-glow: #0088ff;
         }
         
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
@@ -26,34 +27,40 @@
             background: #050505; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
         }
 
-        .tab, .refresh-btn { 
+        .tab, .apk-btn, .refresh-btn { 
             padding: 10px 18px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-weight: bold; outline: none;
+            background: #222; color: #eee; font-size: 14px; font-weight: bold; outline: none;
         }
 
-        .tab:focus, .card:focus, .refresh-btn:focus { 
+        .tab:focus, .card:focus, .apk-btn:focus, .refresh-btn:focus, .fullscreen-btn:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
-            transform: scale(1.05); box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+            transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; padding: 20px; }
         
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
-        .ch-index { position: absolute; top: 0; left: 0; background: var(--blue-glow); color: white; font-size: 14px; font-weight: 900; padding: 4px 8px; border-bottom-right-radius: 12px; z-index: 10; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; transition: 0.2s; }
+        .ch-index { position: absolute; top: 0; left: 0; background: var(--blue-glow); color: white; font-size: 16px; font-weight: 900; padding: 4px 10px; border-bottom-right-radius: 12px; z-index: 10; }
         .fav-star { position: absolute; top: 5px; right: 5px; color: var(--gold); font-size: 18px; display: none; z-index: 10; }
         .is-fav .fav-star { display: block; }
 
-        .logo-box { height: 80px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
-        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
-        .name { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; color: #ccc; }
+        .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
+        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
+        .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; color: #ccc; }
 
-        /* নম্বর OSD - ভিডিওর একদম উপরে দেখানোর জন্য */
+        /* নম্বর দেখানোর OSD - এটি এখন ভিডিওর উপরে থাকবে */
         #osd-number { 
-            position: fixed; top: 10%; right: 5%; 
-            background: red; color: white; 
-            font-size: 70px; padding: 15px 45px; border-radius: 15px; 
-            display: none; z-index: 9999999; font-weight: bold; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+            position: fixed; top: 15%; right: 10%; 
+            background: rgba(255, 0, 0, 0.95); color: white; 
+            font-size: 80px; padding: 20px 50px; border-radius: 20px; 
+            display: none; z-index: 2147483647; font-weight: bold; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.8); pointer-events: none;
+        }
+
+        .fullscreen-btn {
+            position: fixed; top: 10px; right: 10px; z-index: 1000;
+            background: var(--premium); color: #000; border: none; padding: 10px 15px;
+            border-radius: 8px; cursor: pointer; font-weight: 900;
         }
     </style>
 </head>
@@ -61,8 +68,10 @@
 
 <div id="osd-number"></div>
 
+<button class="fullscreen-btn" id="fs-btn" tabindex="0" onclick="toggleMainFullscreen()">FULLSCREEN</button>
+
 <div id="player-wrapper">
-    <video id="tv-player" class="video-js vjs-default-skin" controls preload="auto"></video>
+    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
 </div>
 
 <div id="ui-overlay">
@@ -81,8 +90,7 @@
     
     let allChannels = [], currentChIndex = -1;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
-    let numBuffer = "", numTimeout = null;
-    let longPressDetector = null;
+    let numBuffer = "", numTimeout = null, longPressTimer = null;
 
     async function init() {
         try {
@@ -105,18 +113,25 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch, idx) => {
+        list.forEach((ch) => {
             const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
             const displayIdx = allChannels.findIndex(i => i.url === ch.url) + 1;
             card.className = `card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
             card.setAttribute('data-index', displayIdx);
-            card.innerHTML = `<div class="ch-index">${displayIdx}</div><div class="fav-star">⭐</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
+            card.innerHTML = `<div class="ch-index">${displayIdx}</div><div class="fav-star">⭐</div><div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div><div class="name">${ch.name}</div>`;
 
-            // মাউস বা টাচ ক্লিক
+            // টাচ বা রিমোট ওকে বাটন চেপে ধরলে ফুলস্ক্রিন হবে
+            card.onmousedown = card.ontouchstart = () => {
+                longPressTimer = setTimeout(() => {
+                    playChannel(displayIdx - 1);
+                    toggleMainFullscreen();
+                }, 1000);
+            };
+            card.onmouseup = card.ontouchend = () => clearTimeout(longPressTimer);
             card.onclick = () => playChannel(displayIdx - 1);
-            
+
             grid.appendChild(card);
         });
     }
@@ -138,14 +153,13 @@
         renderGrid(list);
     }
 
-    // রিমোট বা কিবোর্ড কন্ট্রোল
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
+        const osd = document.getElementById('osd-number');
 
-        // ১. নম্বর টাইপিং এবং অটো-ফোকাস
+        // ১. নম্বর ইনপুট এবং ফোকাস মুভমেন্ট
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
-            const osd = document.getElementById('osd-number');
             osd.innerText = numBuffer; 
             osd.style.display = 'block';
             
@@ -154,7 +168,7 @@
                 const targetIdx = parseInt(numBuffer) - 1;
                 if (targetIdx >= 0 && targetIdx < allChannels.length) {
                     playChannel(targetIdx);
-                    // সরাসরি সেই চ্যানেলে ফোকাস নিয়ে যাওয়া
+                    // ব্যাকগ্রাউন্ডে ফোকাস সেই চ্যানেলে নিয়ে যাওয়া
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx + 1}"]`);
                     if (targetCard) {
                         targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -163,33 +177,40 @@
                 }
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 1800); // ১.৮ সেকেন্ড সময়
+            }, 2000);
             return;
         }
 
-        // ২. রিমোট 'Enter' বা 'OK' চেপে ধরলে ফুলস্ক্রিন
-        if (e.key === 'Enter' && active.classList.contains('card')) {
-            if (!longPressDetector) {
-                longPressDetector = setTimeout(() => {
-                    toggleMainFullscreen();
-                    longPressDetector = null;
-                }, 800); // ০.৮ সেকেন্ড চেপে ধরলে ফুলস্ক্রিন হবে
-            }
+        // ২. ফুলস্ক্রিনে থাকাকালীন চ্যানেল বদলানো (Left/Right)
+        if (player.isFullscreen()) {
+            if (e.key === 'ArrowRight') playChannel(currentChIndex + 1 >= allChannels.length ? 0 : currentChIndex + 1);
+            else if (e.key === 'ArrowLeft') playChannel(currentChIndex - 1 < 0 ? allChannels.length - 1 : currentChIndex - 1);
+            return;
         }
 
-        // ৩. ফুলস্ক্রিনে থাকাকালীন চ্যানেল বদল (Left/Right)
-        if (player.isFullscreen()) {
-            if (e.key === 'ArrowRight') playChannel(currentChIndex + 1);
-            if (e.key === 'ArrowLeft') playChannel(currentChIndex - 1);
+        // ৩. রিমোট নেভিগেশন (Grid System)
+        const cards = Array.from(document.querySelectorAll('.card'));
+        if (active.classList.contains('card')) {
+            const idx = cards.indexOf(active);
+            const cols = Math.floor(document.querySelector('.grid').offsetWidth / 150) || 2;
+            if (e.key === 'ArrowRight' && idx < cards.length - 1) cards[idx+1].focus();
+            else if (e.key === 'ArrowLeft' && idx > 0) cards[idx-1].focus();
+            else if (e.key === 'ArrowDown' && idx + cols < cards.length) cards[idx+cols].focus();
+            else if (e.key === 'ArrowUp') {
+                if (idx < cols) document.querySelector('.tab').focus();
+                else cards[idx-cols].focus();
+            }
+            // এন্টার বাটন লং প্রেস চেক
+            if (e.key === 'Enter') {
+                longPressTimer = setTimeout(() => {
+                    toggleMainFullscreen();
+                }, 1000);
+            }
         }
     });
 
-    // এন্টার বাটন ছেড়ে দিলে টাইমার বন্ধ করা
     window.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') {
-            clearTimeout(longPressDetector);
-            longPressDetector = null;
-        }
+        if (e.key === 'Enter') clearTimeout(longPressTimer);
     });
 
     init();
