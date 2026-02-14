@@ -112,7 +112,9 @@
     let allChannels = [], currentCh = null;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('zeno_recents')) || [];
-    let numBuffer = "", numTimeout = null, longPressTimer = null;
+    let numBuffer = "", numTimeout = null;
+    let longPressTimer = null;
+    let isLongPress = false;
 
     async function init() {
         try {
@@ -149,21 +151,23 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // লং প্রেস ও সাধারণ ক্লিক লজিক
-            const triggerPlay = () => playChannel(ch);
-            const startLongPress = () => {
+            // টাচ বা মাউস দিয়ে লং প্রেস লজিক
+            card.onmousedown = card.ontouchstart = (e) => {
+                isLongPress = false;
                 longPressTimer = setTimeout(() => {
-                    playChannel(ch);
-                    if (player.requestFullscreen) player.requestFullscreen();
+                    isLongPress = true;
+                    playChannel(ch); // চ্যানেল প্লে করবে
+                    player.requestFullscreen(); // ফুলস্ক্রিন করবে
                 }, 800);
             };
-            const stopLongPress = () => clearTimeout(longPressTimer);
 
-            card.onclick = triggerPlay;
-            card.onmousedown = startLongPress;
-            card.onmouseup = stopLongPress;
-            card.ontouchstart = startLongPress;
-            card.ontouchend = stopLongPress;
+            card.onmouseup = card.onmouseleave = card.ontouchend = () => {
+                clearTimeout(longPressTimer);
+            };
+
+            card.onclick = () => {
+                if (!isLongPress) playChannel(ch);
+            };
 
             grid.appendChild(card);
         });
@@ -174,7 +178,6 @@
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
         
-        // রিসেন্ট লিস্ট আপডেট
         recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 4);
         localStorage.setItem('zeno_recents', JSON.stringify(recents));
         renderRecentPills();
@@ -209,19 +212,21 @@
         renderGrid(list);
     }
 
+    // ফুলস্ক্রিন লজিক (শুধুমাত্র ভিডিও প্লেয়ারের জন্য)
     function toggleMainFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
+        if (!player.isFullscreen()) {
+            player.requestFullscreen();
         } else {
-            document.exitFullscreen();
+            player.exitFullscreen();
         }
     }
 
-    // টিভি রিমোট নেভিগেশন (Fixed সিরিয়াল)
+    // টিভি রিমোট নেভিগেশন ও লং প্রেস সাপোর্ট
+    let keyTimer = null;
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // OSD Number Channel Change
+        // নাম্বার বাটন সাপোর্ট
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -235,12 +240,21 @@
             return;
         }
 
+        // রিমোটের ওকে (Enter) বাটন লং প্রেস চেক
+        if (e.key === 'Enter' && active.classList.contains('card')) {
+            if (!keyTimer) {
+                keyTimer = setTimeout(() => {
+                    player.requestFullscreen(); // চেপে ধরলে ফুলস্ক্রিন হবে
+                }, 1000);
+            }
+        }
+
+        // সাধারণ নেভিগেশন
         const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
         const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
         const currentIndex = navItems.indexOf(active);
 
-        // গ্রিড নেভিগেশন লজিক
         if (active.classList.contains('card')) {
             const cardIdx = cards.indexOf(active);
             const cols = Math.floor(grid.offsetWidth / 140) || 2;
@@ -253,10 +267,16 @@
                 else cards[cardIdx - cols].focus();
             }
         } else {
-            // মেনু বাটন নেভিগেশন
             if (e.key === 'ArrowRight' && currentIndex < navItems.length - 1) navItems[currentIndex + 1].focus();
             else if (e.key === 'ArrowLeft' && currentIndex > 0) navItems[currentIndex - 1].focus();
             else if (e.key === 'ArrowDown') cards[0].focus();
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(keyTimer);
+            keyTimer = null;
         }
     });
 
