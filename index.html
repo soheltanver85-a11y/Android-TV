@@ -6,14 +6,14 @@
     <title>Zeno TV Premium - Ultimate Remote Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* রিমোট ফোকাস ইন্ডিকেটর (প্লেয়ার কন্ট্রোল) */
+        /* রিমোট ফোকাস ইন্ডিকেটর */
         .vjs-control:focus { background: var(--accent) !important; outline: 3px solid white !important; transform: scale(1.1); }
 
         /* ইউআই লেআউট */
@@ -42,18 +42,49 @@
         .apk-btn { background: #007bff; }
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
+        /* --- নতুন প্রিমিয়াম ফুলস্ক্রিন বাটন স্টাইল --- */
+        .fullscreen-trigger {
+            margin-left: auto; /* এটি বাটনটিকে ডানে সরিয়ে দেবে */
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #ff0000 0%, #990000 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 1px;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+            animation: pulse-glow 2s infinite;
+        }
+
+        .fullscreen-trigger svg { width: 16px; height: 16px; stroke: white; }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
         /* ফোকাস স্টাইল */
-        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus { 
+        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-trigger:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
             box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
         }
+        
+        .fullscreen-trigger:focus { background: white !important; color: red !important; }
+        .fullscreen-trigger:focus svg { stroke: red; }
 
         #main-content { padding: 15px; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         
         .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
         .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
-        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: #ffd700; font-size: 12px; display: none; }
+        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: var(--gold); font-size: 12px; display: none; }
         .is-fav .fav-star { display: block; }
 
         .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
@@ -84,6 +115,11 @@
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
         <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
+        
+        <div class="fullscreen-trigger" tabindex="0" onclick="player.requestFullscreen()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+            <span>FULL</span>
+        </div>
     </div>
 
     <div id="main-content">
@@ -139,7 +175,6 @@
 
             card.onclick = () => playChannel(ch);
 
-            // লং প্রেস (Long Press) -> ফুলস্ক্রিন
             const startPress = () => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
@@ -153,7 +188,7 @@
 
             card.onkeydown = (e) => {
                 if (e.key === 'Enter') startPress();
-                if (e.key === 'f' || e.key === 'F') toggleFavorite(ch); // 'f' দিয়ে ফেভারিট
+                if (e.key === 'f' || e.key === 'F') toggleFavorite(ch);
             };
             card.onkeyup = (e) => { if (e.key === 'Enter') endPress(); };
 
@@ -206,7 +241,6 @@
         renderGrid(list);
     }
 
-    // ব্যাক আসলে ওই চ্যানেলে ফোকাস
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen() && currentCh) {
             setTimeout(() => {
@@ -223,7 +257,6 @@
         const volBtn = document.querySelector('.vjs-volume-panel');
         const fullBtn = document.querySelector('.vjs-fullscreen-control');
 
-        // নম্বর কি প্যাড
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -240,7 +273,7 @@
             case 'ArrowUp':
                 if (active.classList.contains('card')) {
                     document.querySelector('.tab').focus();
-                } else if (active.classList.contains('tab') || active.classList.contains('recent-pill') || active.classList.contains('search-btn')) {
+                } else if (active.closest('.tabs-container')) {
                     e.preventDefault();
                     player.userActive(true);
                     playBtn.focus();
@@ -252,21 +285,10 @@
                     e.preventDefault();
                     player.userActive(false);
                     document.querySelector('.tab').focus();
-                } else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) {
-                    document.querySelector('.card').focus();
+                } else if (active.closest('.tabs-container')) {
+                    const firstCard = document.querySelector('.card');
+                    if(firstCard) firstCard.focus();
                 }
-                break;
-
-            case 'ArrowRight':
-                if (active === playBtn) { e.preventDefault(); volBtn.focus(); }
-                else if (active === volBtn || active.closest('.vjs-volume-panel')) { e.preventDefault(); fullBtn.focus(); }
-                else if (active === fullBtn) { e.preventDefault(); playBtn.focus(); }
-                break;
-
-            case 'ArrowLeft':
-                if (active === fullBtn) { e.preventDefault(); volBtn.focus(); }
-                else if (active === volBtn || active.closest('.vjs-volume-panel')) { e.preventDefault(); playBtn.focus(); }
-                else if (active === playBtn) { e.preventDefault(); fullBtn.focus(); }
                 break;
         }
     });
