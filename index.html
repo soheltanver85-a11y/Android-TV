@@ -115,7 +115,8 @@
     
     let allChannels = [], currentChIndex = -1;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
-    let numBuffer = "", numTimeout = null;
+    let numBuffer = "", numTimeout = null, longPressTimer = null;
+    let isLongPress = false;
 
     async function init() {
         try {
@@ -151,7 +152,22 @@
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-            card.onclick = () => playChannel(displayIdx - 1);
+
+            // লং প্রেস ফুলস্ক্রিন ও ক্লিক প্লে
+            card.onmousedown = card.ontouchstart = () => {
+                isLongPress = false;
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    playChannel(displayIdx - 1);
+                    player.requestFullscreen();
+                }, 1000);
+            };
+            card.onmouseup = card.ontouchend = () => clearTimeout(longPressTimer);
+            
+            card.onclick = () => {
+                if(!isLongPress) playChannel(displayIdx - 1);
+            };
+
             grid.appendChild(card);
         });
     }
@@ -201,9 +217,7 @@
             const osd = document.getElementById('osd-number');
             osd.innerText = numBuffer; 
             osd.style.display = 'block';
-            
             clearTimeout(numTimeout);
-            // এখানে ২ সেকেন্ড (2000ms) করা হয়েছে
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer) - 1;
                 if (targetIdx >= 0 && targetIdx < allChannels.length) {
@@ -222,6 +236,15 @@
             return;
         }
 
+        // ফুলস্ক্রিন এন্টার ও লং প্রেস এন্টার
+        if (e.key === 'Enter' && active.classList.contains('card')) {
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                playChannel(parseInt(active.getAttribute('data-index')) - 1);
+                player.requestFullscreen();
+            }, 1000);
+        }
+
         if (isFS) {
             if (e.key === 'ArrowRight') {
                 playChannel(currentChIndex + 1 >= allChannels.length ? 0 : currentChIndex + 1);
@@ -238,7 +261,6 @@
         if (active.classList.contains('card')) {
             const cardIdx = cards.indexOf(active);
             const cols = Math.floor(grid.offsetWidth / 150) || 2;
-
             if (e.key === 'ArrowRight' && cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
             else if (e.key === 'ArrowLeft' && cardIdx > 0) cards[cardIdx - 1].focus();
             else if (e.key === 'ArrowDown' && cardIdx + cols < cards.length) cards[cardIdx + cols].focus();
@@ -255,6 +277,13 @@
             if (e.key === 'ArrowRight' && curIdx < navItems.length - 1) navItems[curIdx + 1].focus();
             else if (e.key === 'ArrowLeft' && curIdx > 0) navItems[curIdx - 1].focus();
             else if (e.key === 'ArrowDown') cards[0].focus();
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(longPressTimer);
+            setTimeout(() => { isLongPress = false; }, 100);
         }
     });
 
