@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Smart Remote Edition</title>
+    <title>Zeno TV Premium - Ultimate Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { 
             --accent: #ff0000; --bg: #050505; --card: #1a1a1a; 
-            --gold: #ffd700; --blue-glow: #0088ff; 
+            --gold: #ffd700; --blue-glow: #0088ff; --premium: linear-gradient(45deg, #FFD700, #FFA500);
         }
         
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
@@ -18,17 +18,26 @@
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
         
+        /* সার্চ বক্স স্টাইল */
+        #search-box { 
+            display: none; padding: 15px; background: #111; border-bottom: 2px solid var(--accent);
+            position: sticky; top: 60px; z-index: 160;
+        }
+        #search-input { width: 90%; padding: 10px; border-radius: 5px; border: none; background: #222; color: white; outline: none; }
+
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; padding: 12px 20px; 
             background: #050505; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
         }
 
-        .tab, .apk-btn, .refresh-btn { 
+        .tab, .apk-btn, .refresh-btn, .search-btn { 
             padding: 10px 18px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-size: 14px; font-weight: bold; outline: none;
+            background: #222; color: #eee; font-size: 14px; font-weight: bold; outline: none; white-space: nowrap;
         }
+        .apk-btn { background: #007bff; }
+        .search-btn { background: #444; }
 
-        .tab:focus, .card:focus, .apk-btn:focus, .refresh-btn:focus { 
+        .tab:focus, .card:focus, .apk-btn:focus, .refresh-btn:focus, .search-btn:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
             transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
@@ -41,9 +50,8 @@
         
         .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
         .logo-box img { width: 75%; height: 75%; object-fit: contain; }
-        .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; color: #ccc; }
+        .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; color: #ccc; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        /* OSD - নম্বর প্রদর্শনী */
         #osd-number { 
             position: fixed; top: 10%; right: 5%; 
             background: rgba(255, 0, 0, 0.9); color: white; 
@@ -63,10 +71,16 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <div style="font-weight:900; color:red; font-style:italic; margin-right:10px;">ZENO TV</div>
+        <div style="font-weight:900; color:red; font-style:italic; margin-right:10px; font-size: 20px;">ZENO TV</div>
+        <div class="search-btn" tabindex="0" onclick="toggleSearch()">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভারিট</div>
-        <div class="refresh-btn" tabindex="0" onclick="location.reload()">🔄 রিফ্রেশ</div>
+        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_APK_LINK_HERE'">📥 APK</div>
+        <div class="refresh-btn" tabindex="0" onclick="location.reload()">🔄</div>
+    </div>
+
+    <div id="search-box">
+        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
     </div>
 
     <div id="main-content">
@@ -117,15 +131,22 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            card.onmousedown = () => {
+            // লং প্রেস ফুলস্ক্রিন লজিক
+            const startPress = () => {
                 isLongPressActive = false;
                 longPressTimer = setTimeout(() => {
                     isLongPressActive = true;
                     playChannel(displayIdx - 1, true);
                 }, 1000);
             };
-            card.onmouseup = () => clearTimeout(longPressTimer);
-            card.onclick = () => { if(!isLongPressActive) playChannel(displayIdx - 1, false); };
+            const endPress = () => clearTimeout(longPressTimer);
+
+            card.onmousedown = card.ontouchstart = startPress;
+            card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
+
+            card.onclick = () => {
+                if(!isLongPressActive) playChannel(displayIdx - 1, false);
+            };
 
             grid.appendChild(card);
         });
@@ -137,7 +158,6 @@
         player.src({ src: allChannels[index].url, type: 'application/x-mpegURL' });
         player.play();
 
-        // রিমোট ফোকাস সেই চ্যানেলে নিয়ে যাওয়া
         const targetCard = document.querySelector(`.card[data-index="${index + 1}"]`);
         if (targetCard) {
             targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -147,11 +167,27 @@
         if (goFullscreen) player.requestFullscreen();
     }
 
-    // কীবোর্ড/রিমোট লজিক
+    function toggleSearch() {
+        const box = document.getElementById('search-box');
+        box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+        if(box.style.display === 'block') document.getElementById('search-input').focus();
+    }
+
+    function searchChannels(q) {
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+        renderGrid(filtered);
+    }
+
+    function filterCategory(cat) {
+        let list = (cat === 'Favorite') ? allChannels.filter(c => favorites.includes(c.url)) : allChannels;
+        renderGrid(list);
+    }
+
     window.addEventListener('keydown', (e) => {
         const isFS = player.isFullscreen();
-        
-        // ১. নম্বর ইনপুট (২ সেকেন্ড)
+        const active = document.activeElement;
+
+        // ১. নম্বর ইনপুট
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -166,7 +202,7 @@
             return;
         }
 
-        // ২. ফুলস্ক্রিন নেভিগেশন (Up/Down/Left/Right)
+        // ২. ফুলস্ক্রিন নেভিগেশন
         if (isFS) {
             if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                 playChannel(currentChIndex + 1 >= allChannels.length ? 0 : currentChIndex + 1, true);
@@ -176,8 +212,17 @@
             return;
         }
 
-        // ৩. সাধারণ মোড নেভিগেশন
-        const active = document.activeElement;
+        // ৩. রিমোট এন্টার লং প্রেস (কার্ডের ওপর)
+        if (e.key === 'Enter' && active.classList.contains('card')) {
+            isLongPressActive = false;
+            longPressTimer = setTimeout(() => {
+                isLongPressActive = true;
+                playChannel(parseInt(active.getAttribute('data-index')) - 1, true);
+            }, 1000);
+        }
+
+        // ৪. সাধারণ নেভিগেশন
+        const navItems = Array.from(document.querySelectorAll('.tab, .apk-btn, .refresh-btn, .search-btn, .card'));
         const cards = Array.from(document.querySelectorAll('.card'));
         if (active.classList.contains('card')) {
             const cardIdx = cards.indexOf(active);
@@ -185,11 +230,26 @@
             if (e.key === 'ArrowRight' && cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
             else if (e.key === 'ArrowLeft' && cardIdx > 0) cards[cardIdx - 1].focus();
             else if (e.key === 'ArrowDown' && cardIdx + cols < cards.length) cards[cardIdx + cols].focus();
-            else if (e.key === 'ArrowUp' && cardIdx >= cols) cards[cardIdx - cols].focus();
-            else if (e.key === 'ArrowUp' && cardIdx < cols) {
-                document.querySelector('.tab').focus();
-                document.getElementById('ui-overlay').scrollTo(0,0);
+            else if (e.key === 'ArrowUp') {
+                if (cardIdx < cols) {
+                    document.querySelector('.tab').focus();
+                    document.getElementById('ui-overlay').scrollTo(0,0);
+                } else {
+                    cards[cardIdx - cols].focus();
+                }
             }
+        } else {
+            const curIdx = navItems.indexOf(active);
+            if (e.key === 'ArrowRight' && curIdx < navItems.length - 1) navItems[curIdx + 1].focus();
+            else if (e.key === 'ArrowLeft' && curIdx > 0) navItems[curIdx - 1].focus();
+            else if (e.key === 'ArrowDown') cards[0].focus();
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(longPressTimer);
+            setTimeout(() => { isLongPressActive = false; }, 200);
         }
     });
 
