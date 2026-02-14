@@ -25,13 +25,12 @@
         }
         #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
 
-        /* ট্যাব কন্টেইনার ফিক্সড পজিশন */
+        /* ট্যাব কন্টেইনার */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
             padding: 12px 20px; background: #050505; 
             position: sticky; top: 0; z-index: 150; 
             border-bottom: 2px solid #222;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* শ্যাডো যোগ করা হয়েছে যাতে গ্রিড নিচে যাচ্ছে বোঝা যায় */
         }
         
         .zeno-logo { font-weight: 900; font-size: 22px; color: var(--accent); font-style: italic; margin-right: 5px; }
@@ -44,37 +43,15 @@
         .apk-btn { background: #007bff; }
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
-        /* --- আল্ট্রা প্রিমিয়াম ফুলস্ক্রিন বাটন --- */
+        /* ফুলস্ক্রিন বাটন */
         .fullscreen-trigger {
             margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 8px 18px;
-            border-radius: 50px; /* ক্যাপসুল ডিজাইন */
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 12px;
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            color: white; padding: 8px 18px; border-radius: 50px;
+            cursor: pointer; font-weight: bold; font-size: 12px;
             border: 1.5px solid rgba(255, 255, 255, 0.3);
             transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .fullscreen-trigger::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: 0.5s;
-        }
-
-        .fullscreen-trigger:hover::before, .fullscreen-trigger:focus::before {
-            left: 100%;
         }
 
         .fullscreen-trigger svg { width: 18px; height: 18px; fill: white; }
@@ -85,16 +62,10 @@
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
 
-        /* মেইন কন্টেন্ট অ্যাডজাস্টমেন্ট */
-        #main-content { 
-            padding: 20px 15px; 
-            background: var(--bg);
-            min-height: 100vh;
-        } 
-        
+        #main-content { padding: 20px 15px; background: var(--bg); min-height: 100vh; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
+        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; outline: none; }
         .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
         .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: var(--gold); font-size: 12px; display: none; }
         .is-fav .fav-star { display: block; }
@@ -184,26 +155,7 @@
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-
             card.onclick = () => playChannel(ch);
-
-            const startPress = () => {
-                longPressTimer = setTimeout(() => {
-                    playChannel(ch);
-                    player.requestFullscreen();
-                }, 1000);
-            };
-            const endPress = () => clearTimeout(longPressTimer);
-
-            card.onmousedown = card.ontouchstart = startPress;
-            card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
-
-            card.onkeydown = (e) => {
-                if (e.key === 'Enter') startPress();
-                if (e.key === 'f' || e.key === 'F') toggleFavorite(ch);
-            };
-            card.onkeyup = (e) => { if (e.key === 'Enter') endPress(); };
-
             grid.appendChild(card);
         });
     }
@@ -253,20 +205,11 @@
         renderGrid(list);
     }
 
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen() && currentCh) {
-            setTimeout(() => {
-                const target = document.querySelector(`.card[data-url="${currentCh.url}"]`);
-                if (target) { target.focus(); target.scrollIntoView({ block: 'center' }); }
-            }, 300);
-        }
-    });
-
-    // --- রিমোট নেভিগেশন ---
+    // --- উন্নত রিমোট নেভিগেশন কন্ট্রোল ---
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
-        const playBtn = document.querySelector('.vjs-play-control');
-
+        
+        // নম্বর কী প্যাড সাপোর্ট
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -279,26 +222,41 @@
             }, 1500);
         }
 
-        switch(e.key) {
-            case 'ArrowUp':
-                if (active.classList.contains('card')) {
+        if (active.classList.contains('card')) {
+            const cards = Array.from(document.querySelectorAll('.card'));
+            const index = cards.indexOf(active);
+            const cols = Math.floor(document.querySelector('.grid').offsetWidth / 130);
+
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (index < cards.length - 1) cards[index + 1].focus();
+            }
+            else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (index > 0) cards[index - 1].focus();
+            }
+            else if (e.key === 'ArrowUp') {
+                if (index < cols) {
+                    // যদি প্রথম সারিতে থাকে, তবেই ক্যাটাগরিতে যাবে
                     document.querySelector('.tab').focus();
-                } else if (active.closest('.tabs-container')) {
+                } else {
                     e.preventDefault();
-                    player.userActive(true);
-                    playBtn.focus();
+                    cards[index - cols].focus();
                 }
-                break;
-            case 'ArrowDown':
-                if (active.closest('.vjs-control-bar')) {
+            }
+            else if (e.key === 'ArrowDown') {
+                if (index + cols < cards.length) {
                     e.preventDefault();
-                    player.userActive(false);
-                    document.querySelector('.tab').focus();
-                } else if (active.closest('.tabs-container')) {
-                    const firstCard = document.querySelector('.card');
-                    if(firstCard) firstCard.focus();
+                    cards[index + cols].focus();
                 }
-                break;
+            }
+        } 
+        else if (active.closest('.tabs-container')) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const firstCard = document.querySelector('.card');
+                if (firstCard) firstCard.focus();
+            }
         }
     });
 
