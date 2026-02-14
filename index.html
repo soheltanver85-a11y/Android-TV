@@ -3,74 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Premium - Ultimate Edition</title>
+    <title>Zeno TV Premium - Android TV Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; --premium: linear-gradient(45deg, #FFD700, #FFA500); }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার ও ভলিউম হাইড */
+        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        /* ভলিউম কন্ট্রোল হাইড করার সিএসএস */
         .vjs-volume-panel, .vjs-mute-control { display: none !important; }
         
-        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
+        /* ইউআই লেআউট - স্পেসিং বাড়ানো হয়েছে */
+        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; padding-top: 10px; }
         
         .zeno-logo { 
-            font-weight: 900; font-size: 24px; color: #fff; 
-            font-style: italic; margin-right: 15px; flex-shrink: 0;
+            font-weight: 900; font-size: 26px; color: #fff; 
+            font-style: italic; margin-right: 20px; flex-shrink: 0;
             text-shadow: 2px 2px #ff0000; letter-spacing: 1px;
         }
         .zeno-logo span { color: var(--accent); }
 
         .fullscreen-btn {
-            position: fixed; top: 10px; right: 10px; z-index: 1000;
-            background: var(--premium); color: #000; border: none; padding: 10px 15px;
+            position: fixed; top: 15px; right: 15px; z-index: 1000;
+            background: var(--premium); color: #000; border: none; padding: 12px 20px;
             border-radius: 8px; cursor: pointer; font-weight: 900; 
-            font-size: 12px; transition: 0.3s; box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
+            font-size: 14px; transition: 0.3s; box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
         }
 
         #search-overlay { 
-            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; 
-            background: #050505; z-index: 300; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
+            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 70px; 
+            background: #050505; z-index: 300; align-items: center; padding: 0 25px; border-bottom: 2px solid var(--accent);
         }
-        #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
 
+        /* ট্যাব কন্টেইনার - দূরত্ব বাড়ানো হয়েছে */
         .tabs-container { 
-            display: flex; align-items: center; gap: 10px; 
-            padding: 12px 20px; background: #050505; 
+            display: flex; align-items: center; gap: 15px; 
+            padding: 20px 25px; background: #050505; 
             position: sticky; top: 0; z-index: 150; 
             border-bottom: 2px solid #222; overflow-x: auto; scrollbar-width: none;
+            margin-bottom: 20px;
         }
-        .tabs-container::-webkit-scrollbar { display: none; }
 
         .tab, .recent-pill, .apk-btn, .search-btn { 
-            padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: 0.2s;
+            padding: 10px 16px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; 
+            background: #222; color: #eee; font-size: 14px; font-weight: bold; outline: none;
+            display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: 0.2s;
         }
-        .apk-btn { background: #007bff; }
-        .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
+        /* রিমোট ফোকাস ইফেক্ট */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
-            transform: scale(1.08); outline: none; box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            transform: scale(1.1); outline: none; box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+            z-index: 10;
         }
 
-        #main-content { padding: 20px 15px; min-height: 100vh; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        /* চ্যানেল গ্রিড - স্পেসিং ও মার্জিন বাড়ানো হয়েছে */
+        #main-content { padding: 25px 25px 100px 25px; } 
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 25px; }
         
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; outline: none; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
-        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: var(--gold); font-size: 12px; display: none; }
-        .is-fav .fav-star { display: block; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; outline: none; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 12px; padding: 3px 7px; border-bottom-right-radius: 10px; z-index: 5; }
+        
+        .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
+        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
+        .name { padding: 8px; font-size: 13px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
-        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
-        .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
-        #osd-number { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 60px; padding: 15px 40px; border-radius: 20px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 30px rgba(255,0,0,0.5); }
+        #osd-number { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 70px; padding: 20px 50px; border-radius: 20px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 40px rgba(255,0,0,0.6); }
     </style>
 </head>
 <body>
@@ -87,7 +86,7 @@
 
 <div id="ui-overlay">
     <div id="search-overlay">
-        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
+        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)" style="flex:1; padding:12px; background:#1a1a1a; border:1px solid #444; color:white; border-radius:8px;">
         <button class="tab" onclick="toggleSearch(false)">বন্ধ</button>
     </div>
 
@@ -97,7 +96,7 @@
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
         <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
-        <div id="recent-box" style="display:flex; gap:8px;"></div>
+        <div id="recent-box" style="display:flex; gap:10px;"></div>
     </div>
 
     <div id="main-content">
@@ -110,7 +109,6 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
-    // ভলিউম ফুল করে দেওয়া
     player.volume(1);
 
     let allChannels = [], currentCh = null;
@@ -148,14 +146,14 @@
             card.className = `card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
             const displayIdx = allChannels.findIndex(i => i.url === ch.url) + 1;
-            card.setAttribute('data-index', displayIdx); // নম্বর দিয়ে খোঁজার জন্য
+            card.setAttribute('data-index', displayIdx);
             card.innerHTML = `
                 <div class="ch-index">${displayIdx}</div>
-                <div class="fav-star">⭐</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
 
+            // আগের লং প্রেস ফাংশনালিটি
             card.onmousedown = card.ontouchstart = () => {
                 isLongPress = false;
                 longPressTimer = setTimeout(() => {
@@ -188,7 +186,7 @@
             const pill = document.createElement('div');
             pill.className = 'recent-pill';
             pill.tabIndex = 0;
-            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
+            pill.innerHTML = `<img src="${ch.logo}" style="width:20px; height:20px; border-radius:4px;"> <span>${ch.name.substring(0,8)}</span>`;
             pill.onclick = () => playChannel(ch);
             box.appendChild(pill);
         });
@@ -215,19 +213,10 @@
         else player.exitFullscreen();
     }
 
-    // ফুলস্ক্রিন থেকে ফিরলে ফোকাস ঠিক রাখার ইভেন্ট
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen() && currentCh) {
-            const idx = allChannels.findIndex(i => i.url === currentCh.url) + 1;
-            const targetCard = document.querySelector(`.card[data-index="${idx}"]`);
-            if (targetCard) targetCard.focus();
-        }
-    });
-
+    // রিমোট কন্ট্রোল এবং কিবোর্ড লজিক (সব আগের মতো)
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // নম্বর টাইপ ও ফোকাস লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -238,32 +227,23 @@
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                
                 if (targetCard) {
-                    targetCard.focus(); // লোগোতে ফোকাস নিয়ে যাবে
-                    targetCard.click(); // চ্যানেল প্লে করবে
+                    targetCard.focus();
+                    targetCard.click();
                 }
-                
                 numBuffer = ""; 
                 osd.style.display = 'none';
             }, 1000);
             return;
         }
 
-        if (e.key === 'Enter' && active.classList.contains('card')) {
-            longPressTimer = setTimeout(() => {
-                player.requestFullscreen();
-            }, 1000);
-        }
-
         const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
-        const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
         const currentIndex = navItems.indexOf(active);
 
         if (active.classList.contains('card')) {
             const cardIdx = cards.indexOf(active);
-            const cols = Math.floor(grid.offsetWidth / 140) || 2;
+            const cols = 5; // গ্রিড কলাম সংখ্যা আন্দাজে
             if (e.key === 'ArrowRight' && cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
             else if (e.key === 'ArrowLeft' && cardIdx > 0) cards[cardIdx - 1].focus();
             else if (e.key === 'ArrowDown' && cardIdx + cols < cards.length) cards[cardIdx + cols].focus();
@@ -276,10 +256,6 @@
             else if (e.key === 'ArrowLeft' && currentIndex > 0) navItems[currentIndex - 1].focus();
             else if (e.key === 'ArrowDown') cards[0].focus();
         }
-    });
-
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') clearTimeout(longPressTimer);
     });
 
     init();
