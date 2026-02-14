@@ -18,7 +18,6 @@
         
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         .vjs-volume-panel, .vjs-mute-control { display: none !important; }
@@ -65,7 +64,6 @@
             transform: scale(1.05); outline: none; box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
         }
 
-        /* চ্যানেল গ্রিড - ক্যাটাগরি ছোট করার জন্য minmax কমানো হয়েছে */
         #main-content { padding: 15px 10px; min-height: 100vh; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
         
@@ -259,6 +257,7 @@
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
+        // নম্বর ইনপুট লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             showOSD(numBuffer, false);
@@ -277,6 +276,7 @@
             return;
         }
 
+        // Up Arrow বাটন দিয়ে ফেভারিট/আন-ফেভারিট লজিক
         if (e.key === 'ArrowUp' && numBuffer !== "") {
             const targetIdx = parseInt(numBuffer);
             const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
@@ -297,6 +297,7 @@
             return;
         }
 
+        // সাধারণ নেভিগেশন
         const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .refresh-btn, .recent-pill, .fullscreen-btn, .card'));
         const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
