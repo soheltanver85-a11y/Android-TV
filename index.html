@@ -9,14 +9,14 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; --premium: linear-gradient(45deg, #FFD700, #FFA500); }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
+        /* প্লেয়ার ও ভলিউম হাইড */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
+        /* ভলিউম কন্ট্রোল হাইড করার সিএসএস */
+        .vjs-volume-panel, .vjs-mute-control { display: none !important; }
         
-        /* ইউআই লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
         
-        /* লোগো স্টাইল */
         .zeno-logo { 
             font-weight: 900; font-size: 24px; color: #fff; 
             font-style: italic; margin-right: 15px; flex-shrink: 0;
@@ -24,7 +24,6 @@
         }
         .zeno-logo span { color: var(--accent); }
 
-        /* ফিক্সড ফুলস্ক্রিন বাটন - কোণায় */
         .fullscreen-btn {
             position: fixed; top: 10px; right: 10px; z-index: 1000;
             background: var(--premium); color: #000; border: none; padding: 10px 15px;
@@ -111,6 +110,9 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
+    // ভলিউম ফুল করে দেওয়া
+    player.volume(1);
+
     let allChannels = [], currentCh = null;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('zeno_recents')) || [];
@@ -145,8 +147,8 @@
             const card = document.createElement('div');
             card.className = `card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
-            // চ্যানেল ইনডেক্স ঠিক করা হয়েছে (১ থেকে শুরু)
             const displayIdx = allChannels.findIndex(i => i.url === ch.url) + 1;
+            card.setAttribute('data-index', displayIdx); // নম্বর দিয়ে খোঁজার জন্য
             card.innerHTML = `
                 <div class="ch-index">${displayIdx}</div>
                 <div class="fav-star">⭐</div>
@@ -154,7 +156,6 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // লং প্রেস লজিক (মাউস/টাচ)
             card.onmousedown = card.ontouchstart = () => {
                 isLongPress = false;
                 longPressTimer = setTimeout(() => {
@@ -214,11 +215,19 @@
         else player.exitFullscreen();
     }
 
-    // রিমোট বা কিবোর্ড নেভিগেশন এবং নম্বর সিলেকশন
+    // ফুলস্ক্রিন থেকে ফিরলে ফোকাস ঠিক রাখার ইভেন্ট
+    player.on('fullscreenchange', () => {
+        if (!player.isFullscreen() && currentCh) {
+            const idx = allChannels.findIndex(i => i.url === currentCh.url) + 1;
+            const targetCard = document.querySelector(`.card[data-index="${idx}"]`);
+            if (targetCard) targetCard.focus();
+        }
+    });
+
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // ১ বা ১১ ইত্যাদি নম্বর চেপে চ্যানেল পরিবর্তন
+        // নম্বর টাইপ ও ফোকাস লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -227,24 +236,26 @@
             
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
-                const targetIdx = parseInt(numBuffer) - 1; // ইনডেক্স ০ থেকে শুরু
-                if (allChannels[targetIdx]) {
-                    playChannel(allChannels[targetIdx]);
+                const targetIdx = parseInt(numBuffer);
+                const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
+                
+                if (targetCard) {
+                    targetCard.focus(); // লোগোতে ফোকাস নিয়ে যাবে
+                    targetCard.click(); // চ্যানেল প্লে করবে
                 }
+                
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 1200); // ১.২ সেকেন্ড সময় পাবে নম্বর টাইপ করতে
+            }, 1000);
             return;
         }
 
-        // এন্টার বা ওকে বাটন লং প্রেস (ফুলস্ক্রিনের জন্য)
         if (e.key === 'Enter' && active.classList.contains('card')) {
             longPressTimer = setTimeout(() => {
                 player.requestFullscreen();
             }, 1000);
         }
 
-        // সাধারণ নেভিগেশন
         const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
         const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
