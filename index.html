@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Premium - 2 Rows 7 Columns</title>
+    <title>Zeno TV - Premium Compact UI</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
@@ -12,13 +12,17 @@
         /* প্লেয়ার সেকশন */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
+        
+        /* রিমোট ফোকাস ইন্ডিকেটর */
         .vjs-control:focus { background: var(--accent) !important; outline: none; }
 
+        /* নিচের অংশ */
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); }
         
+        /* ট্যাব ও ক্যাটাগরি বার */
         .tabs-container { 
-            display: flex; align-items: center; gap: 10px; 
-            padding: 10px 20px; background: rgba(5, 5, 5, 0.98); 
+            display: flex; align-items: center; gap: 8px; 
+            padding: 10px 15px; background: rgba(5, 5, 5, 0.98); 
             position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
         }
         
@@ -41,34 +45,34 @@
             cursor: pointer;
             margin-left: auto;
             display: flex;
-            align-items: center;
-            gap: 6px;
+            align-items: center; gap: 6px;
             transition: 0.3s;
         }
         .fs-unique-btn:focus { background: white; color: black; transform: scale(1.1); box-shadow: 0 0 15px white; }
 
-        /* গ্রিড সেটিংস: প্রতি সারিতে ৭টি চ্যানেল */
-        #main-content { padding: 15px; } 
+        /* গ্রিড সেটিংস: ছোট এবং সুন্দর শাড়ি */
+        #main-content { padding: 12px; } 
         .grid { 
             display: grid; 
-            grid-template-columns: repeat(7, 1fr); /* এক সারিতে ৭টি */
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
             gap: 10px; 
         }
         
-        .card { background: var(--card); border-radius: 10px; cursor: pointer; border: 2px solid transparent; position: relative; transition: 0.2s; }
+        .card { background: var(--card); border-radius: 10px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
         .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 9px; padding: 1px 4px; border-bottom-right-radius: 6px; z-index: 5; }
-        .fav-star { position: absolute; top: 2px; right: 4px; color: #ffd700; font-size: 12px; display: none; }
+        .fav-star { position: absolute; top: 2px; right: 5px; color: #ffd700; font-size: 13px; display: none; }
         .is-fav .fav-star { display: block; }
 
-        .logo-box { height: 60px; display: flex; align-items: center; justify-content: center; background: #111; margin: 3px; border-radius: 6px; }
-        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
-        .name { padding: 5px; font-size: 10px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
+        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
+        .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        /* ফোকাস হলে লাল বর্ডার ও বড় হবে */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus { 
-            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
+            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.08); outline: none;
         }
 
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 50px; padding: 10px 25px; border-radius: 12px; display: none; z-index: 1000; }
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 50px; padding: 10px 25px; border-radius: 12px; display: none; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -84,7 +88,7 @@
         <div class="zeno-logo">ZENO</div>
         <div class="search-btn" tabindex="0">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ প্রিয়</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
         <div class="apk-btn" tabindex="0">📥 APK</div>
         <div class="fs-unique-btn" tabindex="0" onclick="goFull()">⛶ FULLSCREEN</div>
@@ -142,6 +146,7 @@
 
             card.onclick = () => playChannel(ch);
 
+            // লং প্রেস ফুলস্ক্রিন লজিক
             const startPress = () => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
@@ -153,7 +158,7 @@
             card.onmousedown = card.ontouchstart = startPress;
             card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
             card.onkeydown = (e) => { 
-                if (e.key === 'Enter') startPress(); 
+                if (e.key === 'Enter') startPress();
                 if (e.key.toLowerCase() === 'f') toggleFavorite(ch);
             };
             card.onkeyup = (e) => { if (e.key === 'Enter') endPress(); };
@@ -200,6 +205,7 @@
         renderGrid(list);
     }
 
+    // রিমোট কন্ট্রোল এবং নম্বর কী
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         const playBtn = document.querySelector('.vjs-play-control');
