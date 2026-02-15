@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Pro Android TV</title>
+    <title>Zeno TV Pro - Ultimate Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
+        :root { 
+            --accent: #ff0000; 
+            --bg: #050505; 
+            --card: #1a1a1a; 
+            --blue: #0088ff;
+            --gold: linear-gradient(45deg, #ffd700, #ffa500);
+        }
+        
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার ডিজাইন ও পজিশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; 
             border-bottom: 3px solid #333; display: flex; justify-content: center; align-items: center;
@@ -20,18 +26,27 @@
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); scroll-behavior: smooth; }
         
+        /* ট্যাব এবং বাটন কন্টেইনার */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #050505; 
             position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222; overflow-x: auto;
         }
 
-        .tab, .apk-btn, .refresh-btn { 
-            padding: 10px 18px; border-radius: 10px; cursor: pointer; background: #222; 
+        .tab, .apk-btn, .refresh-btn, .custom-fs-btn, .search-toggle-btn { 
+            padding: 10px 16px; border-radius: 10px; cursor: pointer; background: #222; 
             color: #eee; font-weight: bold; outline: none; border: 2px solid transparent; transition: 0.2s;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
         }
 
-        /* রিমোট ফোকাস স্টাইল */
-        .tab:focus, .card:focus, .refresh-btn:focus { 
+        /* ইউনিক ফুলস্ক্রিন বাটন ডিজাইন */
+        .custom-fs-btn { background: var(--gold); color: #000; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        
+        /* সার্চ বার স্টাইল */
+        #search-box-container { display: none; padding: 10px 20px; background: #111; border-bottom: 1px solid var(--blue); }
+        #search-input { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #222; color: white; outline: none; }
+
+        /* রিমোট ফোকাস */
+        .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .search-toggle-btn:focus { 
             background: var(--accent) !important; color: #fff !important; 
             border-color: #fff !important; transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
@@ -39,22 +54,15 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px; }
         
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
-
-        .ch-index { 
-            position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; 
-            font-size: 14px; font-weight: bold; width: 28px; height: 28px;
-            display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10;
-        }
-
-        .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; }
+        .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 14px; font-weight: bold; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; }
+        .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .name { padding: 12px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; }
+        .name { padding: 12px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
 
-        /* নম্বর ডিসপ্লে (OSD) - ফুলস্ক্রিনেও কাজ করবে */
         #osd-number { 
             position: fixed; top: 30px; right: 30px; background: rgba(255, 0, 0, 0.9); 
             color: white; font-size: 45px; font-weight: bold; padding: 15px 30px; 
-            border-radius: 15px; display: none; z-index: 99999; border: 3px solid white; box-shadow: 0 0 25px rgba(0,0,0,0.7);
+            border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
         }
     </style>
 </head>
@@ -67,11 +75,17 @@
 </div>
 
 <div id="ui-overlay">
+    <div id="search-box-container">
+        <input type="text" id="search-input" placeholder="চ্যানেলের নাম লিখুন..." oninput="searchChannels(this.value)">
+    </div>
+
     <div class="tabs-container">
-        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
+        <button class="search-toggle-btn" tabindex="0" onclick="toggleSearch()">🔍 সার্চ</button>
+        <button class="tab" tabindex="0" onclick="showCategory('all')">সব</button>
         <button class="tab" tabindex="0" onclick="showCategory('fav')">❤️ প্রিয়</button>
-        <button class="apk-btn" tabindex="0" onclick="window.location.href='#'">📥 APK</button>
         <button class="refresh-btn" tabindex="0" onclick="location.reload()">🔄 রিফ্রেশ</button>
+        <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
+        <button class="apk-btn" tabindex="0" onclick="window.location.href='#'">📥 APK</button>
     </div>
     <div id="main-content">
         <div id="channel-grid" class="grid"></div>
@@ -120,23 +134,23 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // সাধারণ ক্লিকে চ্যানেল চলবে
             card.onclick = () => playChannel(ch);
 
-            // লং প্রেস লজিক: ১ সেকেন্ড চেপে ধরলে ফুলস্ক্রিন হবে
+            // লং প্রেস ফিক্স (পুরো কার্ডের জন্য)
             let longPressTimer;
-            const startPress = () => {
+            const handleStart = () => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
-                    if (!player.isFullscreen()) {
-                        player.requestFullscreen();
-                    }
-                }, 1000); // ১ সেকেন্ড
+                    goFullscreen();
+                }, 1000);
             };
-            const endPress = () => clearTimeout(longPressTimer);
+            const handleEnd = () => clearTimeout(longPressTimer);
 
-            card.onmousedown = card.ontouchstart = startPress;
-            card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
+            card.addEventListener('mousedown', handleStart);
+            card.addEventListener('touchstart', handleStart);
+            card.addEventListener('mouseup', handleEnd);
+            card.addEventListener('mouseleave', handleEnd);
+            card.addEventListener('touchend', handleEnd);
 
             grid.appendChild(card);
         });
@@ -147,37 +161,50 @@
         player.play();
     }
 
+    function goFullscreen() {
+        if (!player.isFullscreen()) player.requestFullscreen();
+    }
+
+    function toggleSearch() {
+        const box = document.getElementById('search-box-container');
+        const input = document.getElementById('search-input');
+        if (box.style.display === 'block') {
+            box.style.display = 'none';
+        } else {
+            box.style.display = 'block';
+            input.focus(); // কিবোর্ড ওপেন করবে
+        }
+    }
+
+    function searchChannels(q) {
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+        renderGrid(filtered);
+    }
+
     function showCategory(type) {
         if (type === 'fav') renderGrid(allChannels.filter(c => favorites.includes(c.url)));
         else renderGrid(allChannels);
     }
 
-    // নম্বর লজিক: ৫ সেকেন্ড সময় এবং ফুলস্ক্রিন OSD সাপোর্ট
+    // ৫ সেকেন্ড টাইমার ও ফুলস্ক্রিন OSD
     window.addEventListener('keydown', (e) => {
+        if (document.activeElement.id === 'search-input') return;
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
             osd.innerText = "CH: " + numBuffer; 
             osd.style.display = 'block';
-
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                
                 if (targetCard) {
-                    // স্ক্রল করে চ্যানেলে যাবে এবং প্লে করবে
                     targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     targetCard.focus();
-                    
-                    // প্লে করা (ফুলস্ক্রিন থাকলে ফুলস্ক্রিনেই প্লে হবে)
-                    const chData = allChannels[targetIdx - 1];
-                    if(chData) playChannel(chData);
+                    playChannel(allChannels[targetIdx - 1]);
                 }
-                
-                numBuffer = ""; 
-                osd.style.display = 'none';
-            }, 5000); // ৫ সেকেন্ড সময়
+                numBuffer = ""; osd.style.display = 'none';
+            }, 5000);
         }
     });
 
