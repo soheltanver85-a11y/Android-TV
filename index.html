@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Pro - Absolute Final Fix</title>
+    <title>Zeno TV - Final Perfect Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -11,17 +11,17 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* ১. প্লেয়ার সেকশন (সর্বোচ্চ লেয়ার) */
+        /* প্লেয়ার সেকশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* ২. UI মূল কন্টেইনার */
+        /* UI লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
-        /* ৩. ক্যাটাগরি বার (সম্পূর্ণ আলাদা লেয়ার) */
+        /* ক্যাটাগরি বার */
         .tabs-container { 
             flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
             padding: 15px 20px; background: #0a0a0a; z-index: 3500;
@@ -35,22 +35,24 @@
         }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
+
+        /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); 
-            box-shadow: 0 0 20px var(--accent); z-index: 10;
+            box-shadow: 0 0 20px var(--accent); z-index: 10; outline: none;
         }
 
-        /* ৪. আলাদা স্ক্রলযোগ্য চ্যানেল গ্রিড (সেফ জোন গ্যারান্টি) */
+        /* চ্যানেল গ্রিড */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; }
         .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* ওএসডি নম্বর */
+        /* OSD নম্বর (ফুলস্ক্রিন মোডেও কাজ করবে) */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -86,6 +88,7 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [];
+    let lastFocusedCard = null;
 
     async function init() {
         try {
@@ -105,21 +108,25 @@
         } catch(e) { console.error(e); }
     }
 
-    // ফুলস্ক্রিন ফাংশন যা সব ডিভাইসে কাজ করবে
     function goFullscreen() {
-        const p = document.getElementById('tv-player');
-        if (p.requestFullscreen) p.requestFullscreen();
-        else if (p.webkitRequestFullscreen) p.webkitRequestFullscreen();
-        else if (p.mozRequestFullScreen) p.mozRequestFullScreen();
-        else if (p.msRequestFullscreen) p.msRequestFullscreen();
-        // Video.js এর নিজস্ব মেথড
         if (player.isFullscreen()) return;
         player.requestFullscreen();
     }
 
-    function playChannel(ch) {
+    // ফুলস্ক্রিন থেকে বের হলে ফোকাস ফিরিয়ে আনা
+    player.on('fullscreenchange', () => {
+        if (!player.isFullscreen() && lastFocusedCard) {
+            setTimeout(() => {
+                lastFocusedCard.focus();
+                lastFocusedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+    });
+
+    function playChannel(ch, cardElement) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
+        if(cardElement) lastFocusedCard = cardElement;
     }
 
     function renderGrid(list) {
@@ -138,25 +145,24 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // ডাবল ক্লিক লজিক (ফুলস্ক্রিন গ্যারান্টি সহ)
             let lastClick = 0;
             card.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation(); 
+                lastFocusedCard = card;
                 
                 let currentTime = new Date().getTime();
-                let gap = currentTime - lastClick;
-                
-                if (gap < 400 && gap > 0) { 
-                    // ডাবল ক্লিক ধরা হয়েছে
-                    playChannel(ch);
-                    setTimeout(goFullscreen, 500); 
+                if (currentTime - lastClick < 400) { 
+                    playChannel(ch, card);
+                    setTimeout(goFullscreen, 400); 
                 } else {
-                    // সিঙ্গল ক্লিক
-                    playChannel(ch);
+                    playChannel(ch, card);
                 }
                 lastClick = currentTime;
             });
+
+            // রিমোট ফোকাস ট্র্যাকিং
+            card.addEventListener('focus', () => { lastFocusedCard = card; });
 
             grid.appendChild(card);
         });
@@ -166,9 +172,10 @@
         renderGrid(allChannels);
     }
 
-    // নম্বর সিস্টেম ও পারফেক্ট স্ক্রলিং
+    // নম্বর লজিক - ১০০% নিশ্চিত করা হয়েছে
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
+        // যদি নম্বর কী (0-9) চাপা হয়
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -179,15 +186,20 @@
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
+                
                 if (chData) {
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
                     if(targetCard) {
                         targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         targetCard.focus();
+                        playChannel(chData, targetCard);
+                    } else {
+                        // যদি গ্রিডে রেন্ডার না হয়ে থাকে তবে সরাসরি প্লে হবে
+                        playChannel(chData, null);
                     }
-                    playChannel(chData);
                 }
-                numBuffer = ""; osd.style.display = 'none';
+                numBuffer = ""; 
+                osd.style.display = 'none';
             }, 5000); 
         }
     });
