@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Pro - Ultimate Edition</title>
+    <title>Zeno TV Pro - Final Fix</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
     <style>
-        :root { 
-            --accent: #ff0000; 
-            --bg: #050505; 
-            --card: #1a1a1a; 
-            --blue: #0088ff;
-            --gold: linear-gradient(45deg, #ffd700, #ffa500);
-        }
-        
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         #player-wrapper { 
@@ -26,7 +19,6 @@
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); scroll-behavior: smooth; }
         
-        /* ট্যাব এবং বাটন কন্টেইনার */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #050505; 
             position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222; overflow-x: auto;
@@ -38,14 +30,10 @@
             display: flex; align-items: center; gap: 5px; white-space: nowrap;
         }
 
-        /* ইউনিক ফুলস্ক্রিন বাটন ডিজাইন */
-        .custom-fs-btn { background: var(--gold); color: #000; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-        
-        /* সার্চ বার স্টাইল */
+        .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
         #search-box-container { display: none; padding: 10px 20px; background: #111; border-bottom: 1px solid var(--blue); }
         #search-input { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #222; color: white; outline: none; }
 
-        /* রিমোট ফোকাস */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .search-toggle-btn:focus { 
             background: var(--accent) !important; color: #fff !important; 
             border-color: #fff !important; transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
@@ -59,10 +47,11 @@
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .name { padding: 12px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
 
+        /* নম্বর ডিসপ্লে - ফুলস্ক্রিনেও দেখা যাবে */
         #osd-number { 
             position: fixed; top: 30px; right: 30px; background: rgba(255, 0, 0, 0.9); 
             color: white; font-size: 45px; font-weight: bold; padding: 15px 30px; 
-            border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
+            border-radius: 15px; display: none; z-index: 9999999; border: 3px solid white;
         }
     </style>
 </head>
@@ -75,10 +64,7 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="search-box-container">
-        <input type="text" id="search-input" placeholder="চ্যানেলের নাম লিখুন..." oninput="searchChannels(this.value)">
-    </div>
-
+    <div id="search-box-container"><input type="text" id="search-input" placeholder="চ্যানেলের নাম..." oninput="searchChannels(this.value)"></div>
     <div class="tabs-container">
         <button class="search-toggle-btn" tabindex="0" onclick="toggleSearch()">🔍 সার্চ</button>
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব</button>
@@ -87,9 +73,7 @@
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0" onclick="window.location.href='#'">📥 APK</button>
     </div>
-    <div id="main-content">
-        <div id="channel-grid" class="grid"></div>
-    </div>
+    <div id="main-content"><div id="channel-grid" class="grid"></div></div>
 </div>
 
 <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
@@ -134,14 +118,15 @@
                 <div class="name">${ch.name}</div>
             `;
 
+            // সাধারণ ক্লিক
             card.onclick = () => playChannel(ch);
 
-            // লং প্রেস ফিক্স (পুরো কার্ডের জন্য)
+            // লং প্রেস ফিক্স - গ্যারান্টিড ফুলস্ক্রিন
             let longPressTimer;
-            const handleStart = () => {
+            const handleStart = (e) => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
-                    goFullscreen();
+                    setTimeout(() => goFullscreen(), 200); // ভিডিও লোড হওয়ার জন্য সামান্য বিরতি
                 }, 1000);
             };
             const handleEnd = () => clearTimeout(longPressTimer);
@@ -162,23 +147,19 @@
     }
 
     function goFullscreen() {
-        if (!player.isFullscreen()) player.requestFullscreen();
+        if (player.isFullscreen()) return;
+        if (player.requestFullscreen) player.requestFullscreen();
+        else if (player.el().requestFullscreen) player.el().requestFullscreen();
     }
 
     function toggleSearch() {
         const box = document.getElementById('search-box-container');
-        const input = document.getElementById('search-input');
-        if (box.style.display === 'block') {
-            box.style.display = 'none';
-        } else {
-            box.style.display = 'block';
-            input.focus(); // কিবোর্ড ওপেন করবে
-        }
+        box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+        if(box.style.display === 'block') document.getElementById('search-input').focus();
     }
 
     function searchChannels(q) {
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
-        renderGrid(filtered);
+        renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase())));
     }
 
     function showCategory(type) {
@@ -186,7 +167,7 @@
         else renderGrid(allChannels);
     }
 
-    // ৫ সেকেন্ড টাইমার ও ফুলস্ক্রিন OSD
+    // নম্বর বাটন লজিক - ৫ সেকেন্ড সময় এবং অটো প্লে
     window.addEventListener('keydown', (e) => {
         if (document.activeElement.id === 'search-input') return;
         if (e.key >= '0' && e.key <= '9') {
@@ -194,17 +175,21 @@
             const osd = document.getElementById('osd-number');
             osd.innerText = "CH: " + numBuffer; 
             osd.style.display = 'block';
+            
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
-                const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                if (targetCard) {
-                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    targetCard.focus();
-                    playChannel(allChannels[targetIdx - 1]);
+                const chData = allChannels[targetIdx - 1];
+                if (chData) {
+                    const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
+                    if(targetCard) {
+                        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetCard.focus();
+                    }
+                    playChannel(chData);
                 }
                 numBuffer = ""; osd.style.display = 'none';
-            }, 5000);
+            }, 5000); // ৫ সেকেন্ড
         }
     });
 
