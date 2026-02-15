@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Pro - Final Fix</title>
+    <title>Zeno TV Pro - Fullscreen Fix</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -41,13 +41,14 @@
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px; }
         
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
+        /* কার্ড স্টাইল */
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; -webkit-tap-highlight-color: transparent; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 14px; font-weight: bold; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; }
         .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .name { padding: 12px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
 
-        /* নম্বর ডিসপ্লে - ফুলস্ক্রিনেও দেখা যাবে */
+        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 30px; right: 30px; background: rgba(255, 0, 0, 0.9); 
             color: white; font-size: 45px; font-weight: bold; padding: 15px 30px; 
@@ -102,6 +103,27 @@
         } catch(e) { console.error(e); }
     }
 
+    // ফুলস্ক্রিন ফাংশন (গ্যারান্টিড লজিক)
+    function goFullscreen() {
+        const playerElement = document.getElementById('tv-player');
+        if (player.isFullscreen()) return;
+        
+        if (player.requestFullscreen) {
+            player.requestFullscreen();
+        } else if (playerElement.requestFullscreen) {
+            playerElement.requestFullscreen();
+        } else if (playerElement.webkitRequestFullscreen) {
+            playerElement.webkitRequestFullscreen();
+        } else if (playerElement.msRequestFullscreen) {
+            playerElement.msRequestFullscreen();
+        }
+    }
+
+    function playChannel(ch) {
+        player.src({ src: ch.url, type: 'application/x-mpegURL' });
+        player.play().catch(e => console.log("Auto-play blocked, interaction needed."));
+    }
+
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
@@ -118,38 +140,32 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // সাধারণ ক্লিক
+            // সাধারণ ক্লিক (চ্যানেল প্লে হবে)
             card.onclick = () => playChannel(ch);
 
-            // লং প্রেস ফিক্স - গ্যারান্টিড ফুলস্ক্রিন
+            // লং প্রেস লজিক (১ সেকেন্ড চেপে ধরলে ফুলস্ক্রিন)
             let longPressTimer;
-            const handleStart = (e) => {
+            const startPress = (e) => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
-                    setTimeout(() => goFullscreen(), 200); // ভিডিও লোড হওয়ার জন্য সামান্য বিরতি
+                    // সামান্য ডিলে দিয়ে ফুলস্ক্রিন ট্রিগার করা যাতে ভিডিও লোড শুরু হয়
+                    setTimeout(goFullscreen, 300);
                 }, 1000);
             };
-            const handleEnd = () => clearTimeout(longPressTimer);
 
-            card.addEventListener('mousedown', handleStart);
-            card.addEventListener('touchstart', handleStart);
-            card.addEventListener('mouseup', handleEnd);
-            card.addEventListener('mouseleave', handleEnd);
-            card.addEventListener('touchend', handleEnd);
+            const cancelPress = () => {
+                clearTimeout(longPressTimer);
+            };
+
+            // ইভেন্ট লিসেনার যুক্ত করা (মাউস এবং টাচ দুটোর জন্য)
+            card.addEventListener('mousedown', startPress);
+            card.addEventListener('touchstart', startPress);
+            card.addEventListener('mouseup', cancelPress);
+            card.addEventListener('mouseleave', cancelPress);
+            card.addEventListener('touchend', cancelPress);
 
             grid.appendChild(card);
         });
-    }
-
-    function playChannel(ch) {
-        player.src({ src: ch.url, type: 'application/x-mpegURL' });
-        player.play();
-    }
-
-    function goFullscreen() {
-        if (player.isFullscreen()) return;
-        if (player.requestFullscreen) player.requestFullscreen();
-        else if (player.el().requestFullscreen) player.el().requestFullscreen();
     }
 
     function toggleSearch() {
@@ -167,7 +183,7 @@
         else renderGrid(allChannels);
     }
 
-    // নম্বর বাটন লজিক - ৫ সেকেন্ড সময় এবং অটো প্লে
+    // নম্বর লজিক (৫ সেকেন্ড সময়)
     window.addEventListener('keydown', (e) => {
         if (document.activeElement.id === 'search-input') return;
         if (e.key >= '0' && e.key <= '9') {
@@ -189,7 +205,7 @@
                     playChannel(chData);
                 }
                 numBuffer = ""; osd.style.display = 'none';
-            }, 5000); // ৫ সেকেন্ড
+            }, 5000); 
         }
     });
 
