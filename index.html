@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Final Fix</title>
+    <title>Zeno TV - Final Perfect Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -11,14 +11,17 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
+        /* প্লেয়ার সেকশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
+        /* UI লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
+        /* ক্যাটাগরি বার */
         .tabs-container { 
             flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
             padding: 15px 20px; background: #0a0a0a; z-index: 3500;
@@ -33,11 +36,13 @@
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
 
+        /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); 
             box-shadow: 0 0 20px var(--accent); z-index: 10; outline: none;
         }
 
+        /* চ্যানেল গ্রিড */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
@@ -47,6 +52,7 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
+        /* OSD নম্বর (ফুলস্ক্রিন মোডেও কাজ করবে) */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -80,79 +86,55 @@
 <script>
     const player = videojs('tv-player');
     
-    // GitLab সরাসরি RAW লিঙ্ক
-    const m3uUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
+    // আপনার নতুন GitLab URL
+    const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
+    // Proxy ব্যবহার করে লোড করা হচ্ছে যাতে CORS সমস্যা না হয়
+    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
 
     let allChannels = [];
     let lastFocusedCard = null;
 
     async function init() {
         try {
-            // ক্যাশ এড়ানোর জন্য টাইমস্ট্যাম্প যোগ করা হয়েছে
-            const response = await fetch(m3uUrl + '?t=' + new Date().getTime());
-            if (!response.ok) throw new Error('ফাইল লোড করা যায়নি');
+            const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
+            const data = await res.text();
             
-            const data = await response.text();
-            parseM3U(data);
+            const lines = data.split('\n');
+            let name = "", logo = "";
+            allChannels = [];
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.includes('#EXTINF:')) {
+                    const nameParts = line.split(',');
+                    name = nameParts[nameParts.length - 1].trim();
+                    logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
+                } else if (line.startsWith('http')) {
+                    allChannels.push({ name: name || "Channel", url: line, logo });
+                }
+            });
+            showCategory('all');
         } catch(e) { 
             console.error(e);
-            // সরাসরি লোড না হলে বিকল্প হিসেবে প্রক্সি ব্যবহার করবে
-            try {
-                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(m3uUrl);
-                const resProxy = await fetch(proxyUrl);
-                const dataProxy = await resProxy.text();
-                parseM3U(dataProxy);
-            } catch(err) {
-                alert("চ্যানেল লোড করতে সমস্যা হচ্ছে। লিঙ্কে কোনো সমস্যা থাকতে পারে।");
-            }
-        }
-    }
-
-    function parseM3U(data) {
-        const lines = data.split('\n');
-        let name = "", logo = "";
-        allChannels = [];
-
-        lines.forEach(line => {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                // নাম বের করা
-                const nameMatch = line.split(',').pop();
-                name = nameMatch ? nameMatch.trim() : "Unknown";
-                
-                // লোগো বের করা
-                const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-                logo = logoMatch ? logoMatch[1] : "";
-            } else if (line.startsWith('http')) {
-                allChannels.push({ name, url: line, logo });
-            }
-        });
-
-        if (allChannels.length > 0) {
-            renderGrid(allChannels);
-        } else {
-            alert("ফাইলটি ফাঁকা অথবা সঠিক ফরম্যাটে নেই।");
+            alert("চ্যানেল লিস্ট লোড করা সম্ভব হয়নি!");
         }
     }
 
     function goFullscreen() {
-        if (player.isFullscreen()) return;
-        player.requestFullscreen();
-    }
-
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen() && lastFocusedCard) {
-            setTimeout(() => {
-                lastFocusedCard.focus();
-                lastFocusedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
+        if (player.isFullscreen()) {
+            player.exitFullscreen();
+        } else {
+            player.requestFullscreen();
         }
-    });
+    }
 
     function playChannel(ch, cardElement) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
-        if(cardElement) lastFocusedCard = cardElement;
+        if(cardElement) {
+            lastFocusedCard = cardElement;
+            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
     function renderGrid(list) {
@@ -171,7 +153,19 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            card.onclick = () => playChannel(ch, card);
+            // ডাবল ক্লিক লজিক
+            let lastClick = 0;
+            card.addEventListener('click', (e) => {
+                let currentTime = new Date().getTime();
+                if (currentTime - lastClick < 400) { 
+                    playChannel(ch, card);
+                    setTimeout(goFullscreen, 400); 
+                } else {
+                    playChannel(ch, card);
+                }
+                lastClick = currentTime;
+            });
+
             card.addEventListener('focus', () => { lastFocusedCard = card; });
             grid.appendChild(card);
         });
@@ -180,6 +174,35 @@
     function showCategory(type) {
         renderGrid(allChannels);
     }
+
+    // নম্বর লজিক (Remote Control & OSD)
+    let numBuffer = "", numTimeout = null;
+    window.addEventListener('keydown', (e) => {
+        if (e.key >= '0' && e.key <= '9') {
+            numBuffer += e.key;
+            const osd = document.getElementById('osd-number');
+            osd.innerText = "CH: " + numBuffer; 
+            osd.style.display = 'block';
+            
+            clearTimeout(numTimeout);
+            numTimeout = setTimeout(() => {
+                const targetIdx = parseInt(numBuffer);
+                const chData = allChannels[targetIdx - 1];
+                
+                if (chData) {
+                    const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
+                    if(targetCard) {
+                        targetCard.focus();
+                        playChannel(chData, targetCard);
+                    } else {
+                        playChannel(chData, null);
+                    }
+                }
+                numBuffer = ""; 
+                osd.style.display = 'none';
+            }, 2500); 
+        }
+    });
 
     init();
 </script>
