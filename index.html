@@ -86,7 +86,10 @@
 
 <script>
     const player = videojs('tv-player');
-    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
+    
+    // আপনার নতুন ইউআরএলটি এখানে আপডেট করে দেওয়া হয়েছে
+    const m3uUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u?ref_type=heads';
+    
     let allChannels = [];
     let lastFocusedCard = null;
 
@@ -113,7 +116,6 @@
         player.requestFullscreen();
     }
 
-    // ফুলস্ক্রিন থেকে বের হলে ফোকাস ফিরিয়ে আনা
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen() && lastFocusedCard) {
             setTimeout(() => {
@@ -161,7 +163,6 @@
                 lastClick = currentTime;
             });
 
-            // রিমোট ফোকাস ট্র্যাকিং
             card.addEventListener('focus', () => { lastFocusedCard = card; });
 
             grid.appendChild(card);
@@ -172,10 +173,8 @@
         renderGrid(allChannels);
     }
 
-    // নম্বর লজিক - ১০০% নিশ্চিত করা হয়েছে
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
-        // যদি নম্বর কী (0-9) চাপা হয়
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -194,7 +193,6 @@
                         targetCard.focus();
                         playChannel(chData, targetCard);
                     } else {
-                        // যদি গ্রিডে রেন্ডার না হয়ে থাকে তবে সরাসরি প্লে হবে
                         playChannel(chData, null);
                     }
                 }
