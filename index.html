@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Final Perfect Edition</title>
+    <title>Zeno TV - Turbo Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -52,7 +52,7 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর (ফুলস্ক্রিন মোডেও কাজ করবে) */
+        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -71,7 +71,7 @@
 <div id="ui-overlay">
     <div class="tabs-container">
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
-        <button class="refresh-btn" tabindex="0" onclick="location.reload()">🔄 রিফ্রেশ</button>
+        <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0">📥 APK</button>
     </div>
@@ -85,23 +85,33 @@
 
 <script>
     const player = videojs('tv-player');
-    
-    // আপনার নতুন GitLab URL
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
-    // Proxy ব্যবহার করে লোড করা হচ্ছে যাতে CORS সমস্যা না হয়
     const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
 
     let allChannels = [];
     let lastFocusedCard = null;
 
+    // ১. ইনিশিয়াল ফাংশন: প্রথমে ক্যাশ চেক করবে, তারপর নেট থেকে আপডেট আনবে
     async function init() {
+        const cachedData = localStorage.getItem('zeno_cache');
+        if (cachedData) {
+            allChannels = JSON.parse(cachedData);
+            renderGrid(allChannels);
+            console.log("Loaded from cache");
+        }
+        
+        // ব্যাকগ্রাউন্ডে নেট থেকে ডাটা আনা হচ্ছে
+        await fetchChannels();
+    }
+
+    async function fetchChannels() {
         try {
             const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
             const data = await res.text();
             
             const lines = data.split('\n');
             let name = "", logo = "";
-            allChannels = [];
+            let newChannels = [];
 
             lines.forEach(line => {
                 line = line.trim();
@@ -110,14 +120,23 @@
                     name = nameParts[nameParts.length - 1].trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
-                    allChannels.push({ name: name || "Channel", url: line, logo });
+                    newChannels.push({ name: name || "Channel", url: line, logo });
                 }
             });
-            showCategory('all');
+
+            if (newChannels.length > 0) {
+                allChannels = newChannels;
+                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
+                renderGrid(allChannels); // গ্রিড আপডেট
+            }
         } catch(e) { 
-            console.error(e);
-            alert("চ্যানেল লিস্ট লোড করা সম্ভব হয়নি!");
+            console.error("Fetch error:", e);
         }
+    }
+
+    function forceRefresh() {
+        localStorage.removeItem('zeno_cache');
+        location.reload();
     }
 
     function goFullscreen() {
@@ -153,7 +172,6 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // ডাবল ক্লিক লজিক
             let lastClick = 0;
             card.addEventListener('click', (e) => {
                 let currentTime = new Date().getTime();
