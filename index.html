@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Updated Edition</title>
+    <title>Zeno TV - Final Fix</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -65,7 +65,6 @@
 <div id="ui-overlay">
     <div class="tabs-container">
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
-        <button class="tab" tabindex="0" onclick="showCategory('fav')">❤️ প্রিয়</button>
         <button class="refresh-btn" tabindex="0" onclick="location.reload()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0">📥 APK</button>
@@ -81,43 +80,58 @@
 <script>
     const player = videojs('tv-player');
     
-    // নতুন এবং প্রক্সি যুক্ত লিঙ্ক
-    const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
-    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
+    // GitLab সরাসরি RAW লিঙ্ক
+    const m3uUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
 
     let allChannels = [];
     let lastFocusedCard = null;
 
     async function init() {
         try {
-            const res = await fetch(m3uUrl);
-            if (!res.ok) throw new Error('Network error');
-            const data = await res.text();
+            // ক্যাশ এড়ানোর জন্য টাইমস্ট্যাম্প যোগ করা হয়েছে
+            const response = await fetch(m3uUrl + '?t=' + new Date().getTime());
+            if (!response.ok) throw new Error('ফাইল লোড করা যায়নি');
             
-            const lines = data.split('\n');
-            let name = "", logo = "";
-            allChannels = [];
-
-            lines.forEach(line => {
-                line = line.trim();
-                if (line.includes('#EXTINF:')) {
-                    // উন্নত নাম ও লোগো ডিটেকশন
-                    const nameParts = line.split(',');
-                    name = nameParts[nameParts.length - 1].trim();
-                    logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
-                } else if (line.startsWith('http')) {
-                    allChannels.push({ name: name || "Unknown", url: line, logo: logo });
-                }
-            });
-
-            if (allChannels.length > 0) {
-                renderGrid(allChannels);
-            } else {
-                alert("প্লেলিস্টে কোনো চ্যানেল খুঁজে পাওয়া যায়নি!");
-            }
+            const data = await response.text();
+            parseM3U(data);
         } catch(e) { 
             console.error(e);
-            alert("চ্যানেল লোড করতে সমস্যা হচ্ছে। আপনার ইন্টারনেট বা লিঙ্কটি চেক করুন।");
+            // সরাসরি লোড না হলে বিকল্প হিসেবে প্রক্সি ব্যবহার করবে
+            try {
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(m3uUrl);
+                const resProxy = await fetch(proxyUrl);
+                const dataProxy = await resProxy.text();
+                parseM3U(dataProxy);
+            } catch(err) {
+                alert("চ্যানেল লোড করতে সমস্যা হচ্ছে। লিঙ্কে কোনো সমস্যা থাকতে পারে।");
+            }
+        }
+    }
+
+    function parseM3U(data) {
+        const lines = data.split('\n');
+        let name = "", logo = "";
+        allChannels = [];
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                // নাম বের করা
+                const nameMatch = line.split(',').pop();
+                name = nameMatch ? nameMatch.trim() : "Unknown";
+                
+                // লোগো বের করা
+                const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                logo = logoMatch ? logoMatch[1] : "";
+            } else if (line.startsWith('http')) {
+                allChannels.push({ name, url: line, logo });
+            }
+        });
+
+        if (allChannels.length > 0) {
+            renderGrid(allChannels);
+        } else {
+            alert("ফাইলটি ফাঁকা অথবা সঠিক ফরম্যাটে নেই।");
         }
     }
 
@@ -157,17 +171,7 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            let lastClick = 0;
-            card.addEventListener('click', (e) => {
-                e.preventDefault();
-                playChannel(ch, card);
-                let currentTime = new Date().getTime();
-                if (currentTime - lastClick < 400) { 
-                    setTimeout(goFullscreen, 400); 
-                }
-                lastClick = currentTime;
-            });
-
+            card.onclick = () => playChannel(ch, card);
             card.addEventListener('focus', () => { lastFocusedCard = card; });
             grid.appendChild(card);
         });
@@ -176,35 +180,6 @@
     function showCategory(type) {
         renderGrid(allChannels);
     }
-
-    let numBuffer = "", numTimeout = null;
-    window.addEventListener('keydown', (e) => {
-        if (e.key >= '0' && e.key <= '9') {
-            numBuffer += e.key;
-            const osd = document.getElementById('osd-number');
-            osd.innerText = "CH: " + numBuffer; 
-            osd.style.display = 'block';
-            
-            clearTimeout(numTimeout);
-            numTimeout = setTimeout(() => {
-                const targetIdx = parseInt(numBuffer);
-                const chData = allChannels[targetIdx - 1];
-                
-                if (chData) {
-                    const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    if(targetCard) {
-                        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        targetCard.focus();
-                        playChannel(chData, targetCard);
-                    } else {
-                        playChannel(chData, null);
-                    }
-                }
-                numBuffer = ""; 
-                osd.style.display = 'none';
-            }, 3000); 
-        }
-    });
 
     init();
 </script>
